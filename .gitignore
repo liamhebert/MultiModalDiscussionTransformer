@@ -1,0 +1,13 @@
+*.json
+*/images/*
+*.out
+*/__pycache__
+*/ckpts-*
+*/checkpoints
+*/runs*
+*/wandb
+*.tar.gz
+*.txt
+*.pt
+*.parquet
+*.ipynb
