@@ -1,0 +1,8 @@
+id	text	labels
+doc1	a	PersonDirectedAbuse,IdentityDirectedAbuse 
+doc2	b	Neutral
+doc3	c	IdentityDirectedAbuse
+doc4	d	AffiliationDirectedAbuse,IdentityDirectedAbuse 
+doc5	e	Neutral
+doc6	f	AffiliationDirectedAbuse,PersonDirectedAbuse,IdentityDirectedAbuse
+doc7	g	AffiliationDirectedAbuse

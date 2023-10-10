@@ -1,0 +1,12 @@
+info_id	annotation_Primary	annotation_Secondary	subreddit_seen	annotation_Context
+doc1	PersonDirectedAbuse	PersonDirectedAbuse / about a person who is not in the thread	1	CurrentContent
+doc1	IdentityDirectedAbuse	IdentityDirectedAbuse / derogation	1	PreviousContent
+doc2	Neutral		1	
+doc3	IdentityDirectedAbuse	IdentityDirectedAbuse / animosity	1	PreviousContent
+doc4	AffiliationDirectedAbuse	AffiliationDirectedAbuse / animosity	1	PreviousContent
+doc4	IdentityDirectedAbuse	IdentityDirectedAbuse / animosity	1	CurrentContent
+doc5	Neutral		0	
+doc6	AffiliationDirectedAbuse	AffiliationDirectedAbuse / derogation	0	CurrentContent
+doc6	PersonDirectedAbuse	PersonDirectedAbuse / about a person who is not in the thread	0	PreviousContent
+doc6	IdentityDirectedAbuse	IdentityDirectedAbuse / derogation	0	PreviousContent
+doc7	AffiliationDirectedAbuse	AffiliationDirectedAbuse / animosity	0	CurrentContent
