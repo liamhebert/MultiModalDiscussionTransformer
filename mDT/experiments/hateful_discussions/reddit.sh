@@ -3,11 +3,22 @@
 export SLURM_TMPDIR=<INSERT_DATA_DIR>
 export src=`pwd`
 
+if [! -f raw_graphs_image_subset.json]
+then
+    echo "downloading files!" 
+    wget https://vault.cs.uwaterloo.ca/s/AMQjNprPxsi4TBr/download/duped-images.parquet
+    wget https://vault.cs.uwaterloo.ca/s/ree4cN7ajkoZXQF/download/raw_graphs_image_subset.json 
+    wget https://vault.cs.uwaterloo.ca/s/g5KmEicpqEpMrTp/download/image_subset_indexes.tar.gz 
+    tar -xvf image_subset_indexes.tar.gz 
+    wget https://vault.cs.uwaterloo.ca/s/TfMam3Z2Q93BsML/download/images_bigger.tar.gz 
+fi
+
 cp images.tar.gz $SLURM_TMPDIR/.
 cp raw_graphs_image_subset.json $SLURM_TMPDIR/raw_graphs.json
-cp train_index-$6.txt $SLURM_TMPDIR/train-idx.txt
-cp test_index-$6.txt $SLURM_TMPDIR/test-idx.txt
-cp duped-images.parquet $SLURM_TMPDIR/test-idx.txt
+cp image_subset_indexes/train_index-$6.txt $SLURM_TMPDIR/train-idx.txt
+cp image_subset_indexes/test_index-$6.txt $SLURM_TMPDIR/test-idx.txt
+cp duped-images.parquet $SLURM_TMPDIR/duped.parquet
+
 cd $SLURM_TMPDIR 
 echo "unpacking images..."
 tar -xf images.tar.gz 
