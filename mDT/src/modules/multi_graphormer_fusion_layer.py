@@ -12,8 +12,8 @@ class GraphFusionLayer(nn.Module):
                  use_projection: bool = False) -> None:
         super().__init__()
 
-        self.bert_encoder = nn.DataParallel(bert_layer)
-        self.vit_encoder = nn.DataParallel(vit_layer)
+        self.bert_encoder = bert_layer
+        self.vit_encoder = vit_layer
         self.gradient_checkpointing = False
         self.num_bottle_neck_tokens = num_bottle_neck_tokens
         if use_projection:

@@ -90,11 +90,10 @@ def collator(items, max_node=512, multi_hop_max_dist=20, spatial_pos_max=10):
             item.out_degree,
             item.x,
             item.y,
-            item.y_mask,
+            item.hard_y,
             item.x_image_index,
             item.x_images,
             item.distance
-
         )
         for item in items
     ]
@@ -106,7 +105,7 @@ def collator(items, max_node=512, multi_hop_max_dist=20, spatial_pos_max=10):
         out_degrees,
         xs,
         ys,
-        y_masks,
+        hard_ys,
         x_image_indexes,
         x_images,
         distance
@@ -117,8 +116,32 @@ def collator(items, max_node=512, multi_hop_max_dist=20, spatial_pos_max=10):
         attn_biases[idx][1:, 1:][distance[idx] >= spatial_pos_max] = float("-inf")
     max_node_num = max(i['input_ids'].size(0) for i in xs)
 
-    y = torch.cat(ys).long()
-    y_mask = torch.cat(y_masks).bool()
+    y = torch.cat(ys)
+    
+    # format y into a n x n matrix where n is the number of graphs and each row has 1 for the correct label and 0 for the rest
+    y_matrix = y.unsqueeze(1).eq(y).half()
+    # if ys have the same label, they also have a 1 in the column
+    
+    # print('normal_y\n', y_matrix)
+    hard_y = torch.cat(hard_ys)
+    # print('pre_y\n', hard_y)
+    hard_y_matrix = hard_y.unsqueeze(1).eq(y).half()
+    # print('hard_y\n', hard_y_matrix)
+    # print(y_matrix.eq(0))
+
+    # normalized weight
+    extra_weight = (torch.logical_or(y_matrix.eq(1), hard_y_matrix.eq(1))).sum(dim=1) / (torch.logical_and(y_matrix.eq(0), hard_y_matrix.eq(0))).sum(dim=1) # soft_negs are proportionally weighted to the number of hard_negs and hard_pos
+    # unnormalzied
+    extra_weight = extra_weight * 2
+ 
+    soft_matrix = torch.where(torch.logical_and(y_matrix.eq(0), hard_y_matrix.eq(0)), extra_weight, 1)
+    soft_matrix = torch.where(torch.eye(soft_matrix.size(0)).eq(1), 0, soft_matrix) # we dont include itself in the loss
+    #print('SOFT', soft_matrix)
+    #y_matrix = torch.where(hard_y_matrix.eq(1), 0, y_matrix)
+    
+    # print(y, y_matrix, hard_y_matrix)
+    # y_matrix = y_matrix - hard_y_matrix
+    # print('FINAL\n', y_matrix)
     
     x = {}
     
@@ -157,6 +180,7 @@ def collator(items, max_node=512, multi_hop_max_dist=20, spatial_pos_max=10):
         x_attention_mask=x['attention_mask'],
         x_images=x_images,
         x_image_indexes=x_image_indexes,
-        y=y,
-        y_mask=y_mask
+        y=y_matrix,
+        y_weight=soft_matrix,
+        true_y=y
     )

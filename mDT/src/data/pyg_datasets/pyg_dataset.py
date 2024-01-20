@@ -30,13 +30,13 @@ class GraphormerPYGDataset(Dataset):
             self.num_data = len(self.dataset)
         self.seed = seed
         if train_idx is None and train_set is None:
-            train_valid_idx, test_idx = train_test_split(
+            train_idx, test_valid_idx = train_test_split(
                 np.arange(self.num_data),
-                test_size=self.num_data // 10,
+                test_size=self.num_data // 5,
                 random_state=seed,
             )
-            train_idx, valid_idx = train_test_split(
-                train_valid_idx, test_size=self.num_data // 5, random_state=seed
+            test_idx, valid_idx = train_test_split(
+                test_valid_idx, test_size=self.num_data // 10, random_state=seed
             )
             self.train_idx = torch.from_numpy(train_idx)
             self.valid_idx = torch.from_numpy(valid_idx)
@@ -53,7 +53,12 @@ class GraphormerPYGDataset(Dataset):
             self.valid_idx = None
             self.test_idx = None
         else:
+            
             self.num_data = len(train_idx) + len(valid_idx) + len(test_idx)
+            rng = np.random.RandomState(seed)
+            rng.shuffle(train_idx)
+            rng.shuffle(valid_idx)
+            rng.shuffle(test_idx)
             self.train_idx = train_idx
             self.valid_idx = valid_idx
             self.test_idx = test_idx
@@ -65,6 +70,7 @@ class GraphormerPYGDataset(Dataset):
     def index_select(self, idx):
         dataset = copy.copy(self)
         dataset.dataset = self.dataset.index_select(idx)
+        
         if isinstance(idx, torch.Tensor):
             dataset.num_data = idx.size(0)
         else:
@@ -92,6 +98,16 @@ class GraphormerPYGDataset(Dataset):
         return dataset
 
     @lru_cache(maxsize=16)
+    def get(self, idx):
+        if isinstance(idx, int):
+            item = self.dataset[idx]
+            item.idx = idx
+            item.y = item.y.reshape(-1)
+            return preprocess_item(item)
+        else:
+            raise TypeError("index to a GraphormerPYGDataset can only be an integer.")
+    
+    @lru_cache(maxsize=16)
     def __getitem__(self, idx):
         if isinstance(idx, int):
             item = self.dataset[idx]
@@ -100,6 +116,9 @@ class GraphormerPYGDataset(Dataset):
             return preprocess_item(item)
         else:
             raise TypeError("index to a GraphormerPYGDataset can only be an integer.")
-
+    
+    def len(self):
+        return self.num_data
+    
     def __len__(self):
         return self.num_data

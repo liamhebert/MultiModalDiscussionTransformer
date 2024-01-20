@@ -135,15 +135,6 @@ class MultiGraphormerGraphEncoder(nn.Module):
         self.fusion_layers.extend([
             GraphFusionStack(bert_layer, vit_layer, num_bottle_neck, use_projection=True) for bert_layer, vit_layer in zip(bert_other_layers, vit_other_layers)
         ])
-        self.graph_to_bert_projection_layers = nn.ModuleList([])
-        self.graph_to_bert_projection_layers.extend([
-            nn.Linear(768, 768) for _ in range(num_fusion_layers)
-        ])
-
-        self.graph_to_vit_projection_layers = nn.ModuleList([])
-        self.graph_to_vit_projection_layers.extend([
-            nn.Linear(768, 768) for _ in range(num_fusion_layers)
-        ])
         print('NUMBER OF FUSION:', num_fusion_layers)
         print('NUMBER OF GRAPH LAYERS: ')
         # self.fusion_layers = self.fusion_layers[:1]
@@ -164,7 +155,7 @@ class MultiGraphormerGraphEncoder(nn.Module):
                     qn_block_size=qn_block_size,
                     pre_layernorm=pre_layernorm,
                 )
-                for _ in range(len(self.fusion_layers))
+                for _ in range(len(self.fusion_layers) + 1)
             ]
         )
 
@@ -192,7 +183,6 @@ class MultiGraphormerGraphEncoder(nn.Module):
         self.num_bottle_neck = num_bottle_neck
         self.bottle_neck = nn.Embedding(num_bottle_neck, 768)
         
-        self.graph_norm_layers = nn.ModuleList([nn.LayerNorm(self.embedding_dim, device='cuda:0') for _ in range(num_fusion_layers)])
 
         # Apply initialization of model params after building the model
         if self.apply_graphormer_init:
@@ -236,11 +226,11 @@ class MultiGraphormerGraphEncoder(nn.Module):
             bert_other_layers = bert_model.encoder.layer[-num_fusion_layers:]
             bert_model.encoder.layer = bert_model.encoder.layer[:-num_fusion_layers]
         # note: this still includes the layernorm and pooler layers at the end, may want to remove
-        vit_model = nn.DataParallel(vit_model)
+        vit_model = vit_model
         # bert_model = AutoModel.from_pretrained('microsoft/MiniLM-L12-H384-uncased')
         bert_classifier = bert.classifier
         bert_dropout = bert.dropout
-        bert_model = nn.DataParallel(bert_model)
+        bert_model = bert_model
         
         # this has a pooler at the end
         return vit_model, vit_pooler, vit_other_layers, bert_model, bert_pooler, bert_other_layers, bert_classifier, bert_dropout
@@ -278,11 +268,14 @@ class MultiGraphormerGraphEncoder(nn.Module):
     def forward(
         self,
         batched_data,
-        perturb=None,
         last_state_only: bool = False,
         token_embeddings: Optional[torch.Tensor] = None,
         attn_mask: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
+        # print the shape of all tensors in batched_data
+        # for key in batched_data:
+        #     print(key, batched_data[key].shape)
+        
         mask = batched_data['x_token_mask']
         x_token_type_ids = batched_data['x_token_type_ids'][mask, :]
         x_attention_mask = batched_data['x_attention_mask'][mask, :]
@@ -345,10 +338,10 @@ class MultiGraphormerGraphEncoder(nn.Module):
    
         x = self.graph_node_feature(x, batched_data['in_degree'], batched_data['out_degree'])
        
-        if perturb is not None:
-            #ic(torch.mean(torch.abs(x[:, 1, :])))
-            #ic(torch.mean(torch.abs(perturb)))
-            x[:, 1:, :] += perturb
+        # if perturb is not None:
+        #     #ic(torch.mean(torch.abs(x[:, 1, :])))
+        #     #ic(torch.mean(torch.abs(perturb)))
+        #     x[:, 1:, :] += perturb
 
         # x: B x T x C
 
@@ -374,7 +367,7 @@ class MultiGraphormerGraphEncoder(nn.Module):
         if not last_state_only:
             inner_states.append(x)
         
-        for g_layer, f_layer, g_norm, g_to_b_projection, g_to_v_projection in zip(self.layers, self.fusion_layers[1:], self.graph_norm_layers, self.graph_to_vit_projection_layers, self.graph_to_bert_projection_layers):
+        for g_layer, f_layer in zip(self.layers, self.fusion_layers[1:]):
             
             
             x, _ = g_layer(
@@ -404,32 +397,38 @@ class MultiGraphormerGraphEncoder(nn.Module):
             if not last_state_only:
                 inner_states.append(x)
 
+        x, _ = self.layers[-1](
+            x,
+            self_attn_padding_mask=padding_mask,
+            self_attn_mask=attn_mask,
+            self_attn_bias=attn_bias,
+        )
 
         if last_state_only:
             inner_states = [x]
        
         # out_bert = self.bert_pooler(bert_output)[batched_data['y_mask'], :]
         # out_graph = self.bert_pooler(bottle_neck)[batched_data['y_mask'], :]
-        out_bert = self.bert_classifier(self.bert_dropout(self.bert_pooler(bert_output)))
-        out_graph = self.bert_classifier(self.bert_dropout(self.bert_pooler(bottle_neck)))
-        out_all = out_bert + out_graph
-        mask = batched_data['y_mask']
+        # this should take the average embedding of all the text embeddings
+        #print(bert_output.shape, bottle_neck.shape)
+        #bert_output = bert_output[:, self.num_bottle_neck, :]
+        #print(bert_output.shape)
+        #out_bert = torch.mean(bert_output, dim=1)
+        # this should take the average embedding of all the bottleneck embeddings
+        #out_graph = torch.mean(self.bert_pooler(bottle_neck), dim=1)
+        #print(out_bert.shape, out_graph.shape, bottle_neck.shape, self.bert_pooler(bert_output).shape, self.bert_pooler(bottle_neck).shape)
+        # we can also try the global embedding
+        #print(x.shape)
+        global_embedding = x[0, :, :]
+        #print('global', global_embedding.shape)
+
+        #out_all = out_bert + out_graph
+
         # if vit_output != None:
         #     #combined_mask = torch.logical_and(batched_data['y_mask'], batched_data['x_image_indexes'])
         #     out_vit = self.bert_classifier(self.bert_dropout(self.vit_pooler(vit_output)))
         #     out_all[batched_data['x_image_indexes']] = out_all[batched_data['x_image_indexes']] + out_vit
         #     out_all_subset = out_all[mask] / 3
         # else:
-        out_all_subset = out_all[mask] / 2
-        return out_all_subset
-
-        if self.traceable:
-            if vit_output != None:
-                return torch.stack(inner_states), self.bert_pooler(bert_output), self.vit_pooler(vit_output)
-            else:
-                return torch.stack(inner_states), self.bert_pooler(bert_output), None
-        else:
-            if vit_output != None:
-                return inner_states, self.bert_pooler(bert_output), self.vit_pooler(vit_output)
-            else:
-                return inner_states, self.bert_pooler(bert_output), None
+     
+        return global_embedding

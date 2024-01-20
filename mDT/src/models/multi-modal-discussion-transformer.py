@@ -246,10 +246,9 @@ class GraphormerEncoder(FairseqEncoder):
         if self.embed_out_bert is not None:
             self.embed_out.reset_parameters()
 
-    def forward(self, batched_data, perturb=None, masked_tokens=None, **unused):
+    def forward(self, batched_data, **unused):
         bert_cls = self.graph_encoder(
             batched_data,
-            perturb=perturb,
         )
         return bert_cls
 

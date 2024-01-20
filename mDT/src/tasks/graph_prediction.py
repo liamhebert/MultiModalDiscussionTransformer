@@ -2,6 +2,7 @@
 
 import logging
 
+
 import contextlib
 from dataclasses import dataclass, field
 from omegaconf import II, open_dict, OmegaConf
@@ -124,11 +125,17 @@ class GraphPredictionTask(FairseqTask):
     """
 
     def __init__(self, cfg):
+        logging.getLogger().setLevel(logging.INFO)
         super().__init__(cfg)
+        
+        #
         if cfg.user_data_dir != "":
             self.__import_user_defined_datasets(cfg.user_data_dir)
             if cfg.dataset_name in DATASET_REGISTRY:
                 dataset_dict = DATASET_REGISTRY[cfg.dataset_name]
+                # rng.shuffle(dataset_dict["train_idx"])
+                # rng.shuffle(dataset_dict["valid_idx"])
+                # rng.shuffle(dataset_dict["test_idx"])
                 self.dm = GraphormerDataset(
                     dataset=dataset_dict["dataset"],
                     dataset_source=dataset_dict["source"],
@@ -214,6 +221,7 @@ class GraphPredictionTask(FairseqTask):
             cfg.max_nodes = self.cfg.max_nodes
 
         model = models.build_model(cfg, self)
+        
 
         return model
 
