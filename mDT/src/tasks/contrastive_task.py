@@ -1,5 +1,3 @@
-
-
 import logging
 
 
@@ -16,8 +14,7 @@ from fairseq.data import (
 from fairseq.tasks import FairseqDataclass, FairseqTask, register_task
 
 from ..data.dataset import (
-    BatchedDataDataset,
-    TargetDataset,
+    ContrastiveBatchedDataDataset,
     GraphormerDataset,
     EpochShuffleDataset,
 )
@@ -118,7 +115,7 @@ class GraphPredictionConfig(FairseqDataclass):
     )
 
 
-@register_task("graph_prediction", dataclass=GraphPredictionConfig)
+@register_task("contrastive_learning", dataclass=GraphPredictionConfig)
 class GraphPredictionTask(FairseqTask):
     """
     Graph prediction (classification or regression) task.
@@ -127,24 +124,23 @@ class GraphPredictionTask(FairseqTask):
     def __init__(self, cfg):
         logging.getLogger().setLevel(logging.INFO)
         super().__init__(cfg)
-        
         #
         if cfg.user_data_dir != "":
             self.__import_user_defined_datasets(cfg.user_data_dir)
             if cfg.dataset_name in DATASET_REGISTRY:
                 dataset_dict = DATASET_REGISTRY[cfg.dataset_name]
-                # rng.shuffle(dataset_dict["train_idx"])
-                # rng.shuffle(dataset_dict["valid_idx"])
-                # rng.shuffle(dataset_dict["test_idx"])
                 self.dm = GraphormerDataset(
                     dataset=dataset_dict["dataset"],
                     dataset_source=dataset_dict["source"],
                     train_idx=dataset_dict["train_idx"],
                     valid_idx=dataset_dict["valid_idx"],
                     test_idx=dataset_dict["test_idx"],
-                    seed=cfg.seed)
+                    seed=cfg.seed,
+                )
             else:
-                raise ValueError(f"dataset {cfg.dataset_name} is not found in customized dataset module {cfg.user_data_dir}")
+                raise ValueError(
+                    f"dataset {cfg.dataset_name} is not found in customized dataset module {cfg.user_data_dir}"
+                )
         else:
             self.dm = GraphormerDataset(
                 dataset_spec=cfg.dataset_name,
@@ -184,7 +180,7 @@ class GraphPredictionTask(FairseqTask):
         elif split == "test":
             batched_data = self.dm.dataset_test
 
-        batched_data = BatchedDataDataset(
+        batched_data = ContrastiveBatchedDataDataset(
             batched_data,
             max_node=self.max_nodes(),
             multi_hop_max_dist=self.cfg.multi_hop_max_dist,
@@ -193,13 +189,10 @@ class GraphPredictionTask(FairseqTask):
 
         data_sizes = np.array([self.max_nodes()] * len(batched_data))
 
-        target = TargetDataset(batched_data)
-
         dataset = NestedDictionaryDataset(
             {
                 "nsamples": NumSamplesDataset(),
                 "net_input": {"batched_data": batched_data},
-                #"target": target,
             },
             sizes=data_sizes,
         )
@@ -221,8 +214,6 @@ class GraphPredictionTask(FairseqTask):
             cfg.max_nodes = self.cfg.max_nodes
 
         model = models.build_model(cfg, self)
-        
-
         return model
 
     def max_nodes(self):
@@ -239,5 +230,3 @@ class GraphPredictionTask(FairseqTask):
     @property
     def label_dictionary(self):
         return None
-
-

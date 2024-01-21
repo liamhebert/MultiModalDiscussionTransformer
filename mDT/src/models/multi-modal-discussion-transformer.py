@@ -1,5 +1,3 @@
-
-
 import logging
 
 import torch
@@ -19,7 +17,6 @@ from fairseq.utils import safe_hasattr
 from ..modules import init_graphormer_params, MultiGraphormerGraphEncoder
 
 logger = logging.getLogger(__name__)
-
 
 
 @register_model("multi_graphormer")
@@ -88,7 +85,7 @@ class GraphormerModel(FairseqEncoderModel):
             metavar="N",
             help="num fusion layers per graph layer",
         )
- 
+
         parser.add_argument(
             "--num_bottleneck_tokens",
             type=int,
@@ -154,7 +151,7 @@ class GraphormerModel(FairseqEncoderModel):
         parser.add_argument(
             "--freeze_initial_encoders",
             action="store_true",
-            help="freezes the initial layers "
+            help="freezes the initial layers ",
         )
 
     def max_nodes(self):
@@ -209,14 +206,13 @@ class GraphormerEncoder(FairseqEncoder):
             pre_layernorm=args.pre_layernorm,
             apply_graphormer_init=args.apply_graphormer_init,
             activation_fn=args.activation_fn,
-            freeze_initial_encoders=args.freeze_initial_encoders
+            freeze_initial_encoders=args.freeze_initial_encoders,
         )
 
         self.share_input_output_embed = args.share_encoder_input_output_embed
         self.embed_out = None
-        
+
         self.lm_output_learned_bias = None
-     
 
         # Remove head is set to true during fine-tuning
         self.load_softmax = not getattr(args, "remove_head", False)
@@ -306,11 +302,10 @@ def graphormer_base_architecture(args):
     args.encoder_normalize_before = getattr(args, "encoder_normalize_before", True)
     args.apply_graphormer_init = getattr(args, "apply_graphormer_init", False)
     args.share_encoder_input_output_embed = getattr(
-            args, "share_encoder_input_output_embed", False
-        )
+        args, "share_encoder_input_output_embed", False
+    )
     args.no_token_positional_embeddings = getattr(
         args, "no_token_positional_embeddings", False
     )
     args.pre_layernorm = getattr(args, "pre_layernorm", False)
     base_architecture(args)
-

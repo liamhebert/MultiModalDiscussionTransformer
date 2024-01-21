@@ -1,5 +1,3 @@
-
-
 import math
 
 import torch
@@ -42,15 +40,13 @@ class GraphNodeFeature(nn.Module):
         n_graph, n_node = x.size()[:2]
 
         # node feauture + graph token
-        #node_feature = self.atom_encoder(x).sum(dim=-2)  # [n_graph, n_node, n_hidden]
+        # node_feature = self.atom_encoder(x).sum(dim=-2)  # [n_graph, n_node, n_hidden]
 
         # if self.flag and perturb is not None:
         #     node_feature += perturb
 
         node_feature = (
-            x
-            + self.in_degree_encoder(in_degree)
-            + self.out_degree_encoder(out_degree)
+            x + self.in_degree_encoder(in_degree) + self.out_degree_encoder(out_degree)
         )
 
         graph_token_feature = self.graph_token.weight.unsqueeze(0).repeat(n_graph, 1, 1)
@@ -105,7 +101,6 @@ class GraphAttnBias(nn.Module):
         #     batched_data["attn_edge_type"],
         # )
 
-        
         graph_attn_bias = attn_bias.clone()
         graph_attn_bias = graph_attn_bias.unsqueeze(1).repeat(
             1, self.num_heads, 1, 1
@@ -152,7 +147,7 @@ class GraphAttnBias(nn.Module):
         #     # [n_graph, n_node, n_node, n_head] -> [n_graph, n_head, n_node, n_node]
         #     edge_input = self.edge_encoder(attn_edge_type).mean(-2).permute(0, 3, 1, 2)
 
-        #graph_attn_bias[:, :, 1:, 1:] = graph_attn_bias[:, :, 1:, 1:] + edge_input
+        # graph_attn_bias[:, :, 1:, 1:] = graph_attn_bias[:, :, 1:, 1:] + edge_input
         graph_attn_bias = graph_attn_bias + attn_bias.unsqueeze(1)  # reset
 
         return graph_attn_bias

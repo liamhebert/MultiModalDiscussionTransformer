@@ -1,5 +1,3 @@
-
-
 from typing import Callable, Optional
 
 import torch
@@ -143,6 +141,7 @@ class GraphormerGraphEncoderLayer(nn.Module):
             x = self.final_layer_norm(x)
         return x, attn
 
+
 class GraphEncoderStack(nn.Module):
     def __init__(
         self,
@@ -164,20 +163,25 @@ class GraphEncoderStack(nn.Module):
         if num_layers == 0:
             print("EQUALS ZERO")
             self.layers = nn.Identity()
-        self.layers = nn.ModuleList([
-            GraphormerGraphEncoderLayer(embedding_dim,
-                                        ffn_embedding_dim,
-                                        num_attention_heads,
-                                        dropout,
-                                        attention_dropout,
-                                        activation_dropout,
-                                        activation_fn,
-                                        export,
-                                        q_noise,
-                                        qn_block_size,
-                                        init_fn,
-                                        pre_layernorm)
-        for _ in range(num_layers)])
+        self.layers = nn.ModuleList(
+            [
+                GraphormerGraphEncoderLayer(
+                    embedding_dim,
+                    ffn_embedding_dim,
+                    num_attention_heads,
+                    dropout,
+                    attention_dropout,
+                    activation_dropout,
+                    activation_fn,
+                    export,
+                    q_noise,
+                    qn_block_size,
+                    init_fn,
+                    pre_layernorm,
+                )
+                for _ in range(num_layers)
+            ]
+        )
 
     def forward(
         self,

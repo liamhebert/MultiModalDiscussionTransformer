@@ -1,5 +1,3 @@
-
-
 from torch_geometric.data import Dataset
 from sklearn.model_selection import train_test_split
 from typing import List
@@ -53,7 +51,6 @@ class GraphormerPYGDataset(Dataset):
             self.valid_idx = None
             self.test_idx = None
         else:
-            
             self.num_data = len(train_idx) + len(valid_idx) + len(test_idx)
             rng = np.random.RandomState(seed)
             rng.shuffle(train_idx)
@@ -70,7 +67,7 @@ class GraphormerPYGDataset(Dataset):
     def index_select(self, idx):
         dataset = copy.copy(self)
         dataset.dataset = self.dataset.index_select(idx)
-        
+
         if isinstance(idx, torch.Tensor):
             dataset.num_data = idx.size(0)
         else:
@@ -106,7 +103,7 @@ class GraphormerPYGDataset(Dataset):
             return preprocess_item(item)
         else:
             raise TypeError("index to a GraphormerPYGDataset can only be an integer.")
-    
+
     @lru_cache(maxsize=16)
     def __getitem__(self, idx):
         if isinstance(idx, int):
@@ -116,9 +113,9 @@ class GraphormerPYGDataset(Dataset):
             return preprocess_item(item)
         else:
             raise TypeError("index to a GraphormerPYGDataset can only be an integer.")
-    
+
     def len(self):
         return self.num_data
-    
+
     def __len__(self):
         return self.num_data

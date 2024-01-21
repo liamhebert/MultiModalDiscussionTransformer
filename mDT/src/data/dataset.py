@@ -6,14 +6,14 @@ import torch
 from torch.nn import functional as F
 from fairseq.data import data_utils, FairseqDataset, BaseWrapperDataset
 
-from .collator import collator
+from .collator import contrastive_collator, collator
 
 from typing import Optional, Union
 from torch_geometric.data import Data as PYGDataset
 from .pyg_datasets import PYGDatasetLookupTable, GraphormerPYGDataset
 
 
-class BatchedDataDataset(FairseqDataset):
+class ContrastiveBatchedDataDataset(FairseqDataset):
     def __init__(
         self, dataset, max_node=512, multi_hop_max_dist=5, spatial_pos_max=1024
     ):
@@ -22,7 +22,32 @@ class BatchedDataDataset(FairseqDataset):
         self.max_node = max_node
         self.multi_hop_max_dist = multi_hop_max_dist
         self.spatial_pos_max = spatial_pos_max
-        print("SPATIAL POS MAX IS ", self.spatial_pos_max)
+
+    def __getitem__(self, index):
+        item = self.dataset[int(index)]
+        return item
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def collater(self, samples):
+        return contrastive_collator(
+            samples,
+            max_node=self.max_node,
+            multi_hop_max_dist=self.multi_hop_max_dist,
+            spatial_pos_max=self.spatial_pos_max,
+        )
+
+
+class NodePredictionBatchedDataDataset(FairseqDataset):
+    def __init__(
+        self, dataset, max_node=512, multi_hop_max_dist=5, spatial_pos_max=1024
+    ):
+        super().__init__()
+        self.dataset = dataset
+        self.max_node = max_node
+        self.multi_hop_max_dist = multi_hop_max_dist
+        self.spatial_pos_max = spatial_pos_max
 
     def __getitem__(self, index):
         item = self.dataset[int(index)]
@@ -47,14 +72,12 @@ class TargetDataset(FairseqDataset):
 
     @lru_cache(maxsize=16)
     def __getitem__(self, index):
-      
         return self.dataset[index].y
 
     def __len__(self):
         return len(self.dataset)
 
     def collater(self, samples):
-   
         return torch.stack(samples, dim=0)
 
 
@@ -65,14 +88,16 @@ class GraphormerDataset:
         dataset_spec: Optional[str] = None,
         dataset_source: Optional[str] = None,
         seed: int = 0,
-        train_idx = None,
-        valid_idx = None,
-        test_idx = None,
+        train_idx=None,
+        valid_idx=None,
+        test_idx=None,
     ):
         super().__init__()
         if dataset is not None:
             if dataset_source == "pyg":
-                self.dataset = GraphormerPYGDataset(dataset, train_idx=train_idx, valid_idx=valid_idx, test_idx=test_idx)
+                self.dataset = GraphormerPYGDataset(
+                    dataset, train_idx=train_idx, valid_idx=valid_idx, test_idx=test_idx
+                )
             else:
                 raise ValueError("customized dataset can only have source pyg or dgl")
         elif dataset_source == "pyg":
