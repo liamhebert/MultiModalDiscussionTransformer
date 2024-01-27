@@ -243,10 +243,10 @@ class GraphormerEncoder(FairseqEncoder):
             self.embed_out.reset_parameters()
 
     def forward(self, batched_data, **unused):
-        bert_cls = self.graph_encoder(
+        graph_cls = self.graph_encoder(
             batched_data,
         )
-        return bert_cls
+        return graph_cls
 
     def max_nodes(self):
         """Maximum output length supported by the encoder."""
