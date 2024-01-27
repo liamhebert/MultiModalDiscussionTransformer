@@ -19,10 +19,6 @@ from ..data.dataset import (
     EpochShuffleDataset,
 )
 
-import torch
-from fairseq.optim.amp_optimizer import AMPOptimizer
-import math
-
 from ..data import DATASET_REGISTRY
 import sys
 import os
@@ -31,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class GraphPredictionConfig(FairseqDataclass):
+class ContrastiveLearningConfig(FairseqDataclass):
     dataset_name: str = field(
         default="pcqm4m",
         metadata={"help": "name of the dataset"},
@@ -115,8 +111,8 @@ class GraphPredictionConfig(FairseqDataclass):
     )
 
 
-@register_task("contrastive_learning", dataclass=GraphPredictionConfig)
-class GraphPredictionTask(FairseqTask):
+@register_task("contrastive_learning", dataclass=ContrastiveLearningConfig)
+class ContrastiveLearningTask(FairseqTask):
     """
     Graph prediction (classification or regression) task.
     """

@@ -6,7 +6,7 @@ import torch
 from torch.nn import functional as F
 from fairseq.data import data_utils, FairseqDataset, BaseWrapperDataset
 
-from .collator import contrastive_collator, collator
+from .collator import contrastive_collator, node_collator
 
 from typing import Optional, Union
 from torch_geometric.data import Data as PYGDataset
@@ -57,7 +57,7 @@ class NodePredictionBatchedDataDataset(FairseqDataset):
         return len(self.dataset)
 
     def collater(self, samples):
-        return collator(
+        return node_collator(
             samples,
             max_node=self.max_node,
             multi_hop_max_dist=self.multi_hop_max_dist,
