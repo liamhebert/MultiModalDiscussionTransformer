@@ -122,7 +122,7 @@ class NodePredictionTask(FairseqTask):
         if cfg.user_data_dir != "":
             self.__import_user_defined_datasets(cfg.user_data_dir)
             if cfg.dataset_name in DATASET_REGISTRY:
-                dataset_dict = DATASET_REGISTRY[cfg.dataset_name]
+                dataset_dict = DATASET_REGISTRY[cfg.dataset_name]()
                 self.dm = GraphormerDataset(
                     dataset=dataset_dict["dataset"],
                     dataset_source=dataset_dict["source"],
