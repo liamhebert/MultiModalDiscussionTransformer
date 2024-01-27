@@ -5,7 +5,7 @@ import os
 
 
 @register_dataset("hateful_discussions")
-def create_customized_dataset():
+def create_hatespeech_dataset():
     dataset = HatefulDiscussions(root="processed_graphs")
 
     path = os.path.expandvars("$SLURM_TMPDIR")
@@ -29,4 +29,4 @@ def create_customized_dataset():
 
 
 if __name__ == "__main__":
-    create_customized_dataset()
+    create_hatespeech_dataset()

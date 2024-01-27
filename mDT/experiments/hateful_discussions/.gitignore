@@ -1,0 +1,9 @@
+*.tar.gz
+*.json 
+*.txt
+wandb/
+image_subset_indexes/
+images/
+processed_graphs/
+checkpoints-final/
+*.parquet

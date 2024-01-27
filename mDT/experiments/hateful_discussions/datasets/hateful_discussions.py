@@ -5,8 +5,6 @@ import copy
 from transformers import (
     AutoTokenizer,
     ViTImageProcessor,
-    CLIPImageProcessor,
-    CLIPTextModel,
 )
 from PIL import Image
 import re

@@ -120,7 +120,7 @@ class ContrastiveLearningTask(FairseqTask):
     def __init__(self, cfg):
         logging.getLogger().setLevel(logging.INFO)
         super().__init__(cfg)
-        #
+        
         if cfg.user_data_dir != "":
             self.__import_user_defined_datasets(cfg.user_data_dir)
             if cfg.dataset_name in DATASET_REGISTRY:
