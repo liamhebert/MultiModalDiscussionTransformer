@@ -1,3 +1,4 @@
-[submodule "mDT/experiments/mDT-Experimental"]
+[submodule "mDT-Experimental"]
 	path = mDT/experiments/mDT-Experimental
 	url = git@github.com:liamhebert/mDT-Experimental.git
+	branch = .
