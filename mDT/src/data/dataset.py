@@ -33,8 +33,6 @@ class ContrastiveBatchedDataDataset(FairseqDataset):
     def collater(self, samples):
         return contrastive_collator(
             samples,
-            max_node=self.max_node,
-            multi_hop_max_dist=self.multi_hop_max_dist,
             spatial_pos_max=self.spatial_pos_max,
         )
 
