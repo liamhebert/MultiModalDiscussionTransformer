@@ -1,4 +1,14 @@
 #!/bin/bash
+# Launch SLURM parameters
+#SBATCH --time=10:00:00
+#SBATCH --mem=64GB
+#SBATCH --account=robin_group
+#SBATCH --cpus-per-task=8
+#SBATCH --gres=gpu:2
+#SBATCH --output=JOB-%j.log
+#SBATCH -e JOB-%j.err
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=y296guo@uwaterloo.ca
 
 export SLURM_TMPDIR=`pwd`
 export src=`pwd`
@@ -29,7 +39,7 @@ cd $src
 fairseq-train \
 --user-dir ../../src \
 --user-data-dir ./datasets \
---num-workers 12 \
+--num-workers 16 \
 --dataset-name hateful_discussions \
 --task node_prediction \
 --criterion node_cross_entropy \
@@ -51,7 +61,7 @@ fairseq-train \
 --num_graph_stack $4 \
 --num_fusion_stack $5 \
 --encoder-embed-dim 768 \
---distributed-world-size 1 \
+--distributed-world-size 2 \
 --encoder-ffn-embed-dim 768 \
 --encoder-attention-heads 12 \
 --max-epoch 10 \
