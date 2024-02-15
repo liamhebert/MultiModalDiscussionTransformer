@@ -209,7 +209,10 @@ class ContrastiveLearningTask(FairseqTask):
         with open_dict(cfg) if OmegaConf.is_config(cfg) else contextlib.ExitStack():
             cfg.max_nodes = self.cfg.max_nodes
 
-        model = models.build_model(cfg, self)
+        model = models.build_model(cfg, self) #cfg load in checkpoint
+        model.graph_encoder.node_classifier = nn.Identity()
+        model.is_hate_task = False
+
         return model
 
     def max_nodes(self):

@@ -39,10 +39,11 @@ class GraphPredictionNodeCrossEntropy(FairseqCriterion):
         with torch.no_grad():
             natoms = sample["net_input"]["batched_data"]["x"].shape[1]
 
-        logits = model(**sample["net_input"])
+        out_all_subset, _ = model(**sample["net_input"])
 
         targets = sample["net_input"]["batched_data"]["y"]
         target_mask = sample["net_input"]["batched_data"]["y_mask"]
+        logits = out_all_subset[target_mask]
 
         sample_size = len(logits)
         targets = torch.flatten(targets)

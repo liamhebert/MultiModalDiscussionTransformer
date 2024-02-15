@@ -135,7 +135,7 @@ class MultiGraphormerGraphEncoder(nn.Module):
             self.bert_model,
             self.bert_pooler,
             bert_other_layers,
-            self.bert_classifier,
+            self.node_classifier, # rename bert classifier to node
             self.bert_dropout,
         ) = self.build_vit_bert_encoders(
             num_fusion_layers + 1, attention_dropout, activation_dropout
@@ -234,7 +234,7 @@ class MultiGraphormerGraphEncoder(nn.Module):
         if freeze_initial_encoders:
             freeze_module_params(self.bert_model)
             freeze_module_params(self.vit_model)
-            unfreeze_module_params(self.bert_classifier)
+            unfreeze_module_params(self.node_classifier)
             unfreeze_module_params(self.bert_pooler)
             unfreeze_module_params(self.vit_pooler)
 
@@ -268,7 +268,7 @@ class MultiGraphormerGraphEncoder(nn.Module):
         # note: this still includes the layernorm and pooler layers at the end, may want to remove
         vit_model = vit_model
         # bert_model = AutoModel.from_pretrained('microsoft/MiniLM-L12-H384-uncased')
-        bert_classifier = bert.classifier
+        node_classifier = bert.classifier
         bert_dropout = bert.dropout
         bert_model = bert_model
 
@@ -280,7 +280,7 @@ class MultiGraphormerGraphEncoder(nn.Module):
             bert_model,
             bert_pooler,
             bert_other_layers,
-            bert_classifier,
+            node_classifier,
             bert_dropout,
         )
 
@@ -402,6 +402,8 @@ class MultiGraphormerGraphEncoder(nn.Module):
             x, batched_data["in_degree"], batched_data["out_degree"]
         )
 
+        # why was this taken out?
+
         # if perturb is not None:
         #     #ic(torch.mean(torch.abs(x[:, 1, :])))
         #     #ic(torch.mean(torch.abs(perturb)))
@@ -486,6 +488,7 @@ class MultiGraphormerGraphEncoder(nn.Module):
         # we can also try the global embedding
         # print(x.shape)
         global_embedding = x[0, :, :]
+        return bert_output, bottle_neck, global_embedding
         # print('global', global_embedding.shape)
 
         # out_all = out_bert + out_graph
@@ -496,5 +499,3 @@ class MultiGraphormerGraphEncoder(nn.Module):
         #     out_all[batched_data['x_image_indexes']] = out_all[batched_data['x_image_indexes']] + out_vit
         #     out_all_subset = out_all[mask] / 3
         # else:
-
-        return global_embedding
