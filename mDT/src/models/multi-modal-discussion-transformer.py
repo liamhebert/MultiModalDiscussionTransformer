@@ -24,7 +24,6 @@ class GraphormerModel(FairseqEncoderModel):
     def __init__(self, args, encoder):
         super().__init__(encoder)
         self.args = args
-        self.is_hate_task = True
 
         if getattr(args, "apply_graphormer_init", False):
             self.apply(init_graphormer_params)
@@ -180,6 +179,7 @@ class GraphormerEncoder(FairseqEncoder):
     def __init__(self, args):
         super().__init__(dictionary=None)
         self.max_nodes = args.max_nodes
+        self.is_hate_task = True
 
         self.graph_encoder = MultiGraphormerGraphEncoder(
             # < for graphormer
