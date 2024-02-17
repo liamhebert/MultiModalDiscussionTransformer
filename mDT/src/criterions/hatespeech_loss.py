@@ -40,15 +40,14 @@ class GraphPredictionNodeCrossEntropy(FairseqCriterion):
             natoms = sample["net_input"]["batched_data"]["x"].shape[1]
 
         out_all_subset, _ = model(**sample["net_input"])
-
         targets = sample["net_input"]["batched_data"]["y"]
         target_mask = sample["net_input"]["batched_data"]["y_mask"]
-        logits = out_all_subset[target_mask]
+        logits = out_all_subset[target_mask].type(torch.HalfTensor)
 
         sample_size = len(logits)
-        targets = torch.flatten(targets)
+        targets = torch.flatten(targets).type(torch.LongTensor)
         with torch.no_grad():
-            pred_labels = torch.argmax(functional.softmax(logits, dim=-1), dim=-1)
+            pred_labels = torch.argmax(F.softmax(logits, dim=-1), dim=-1)
             ncorrect = (pred_labels == targets).sum()
             num_positive_correct = torch.logical_and(
                 pred_labels == targets, pred_labels == 1
