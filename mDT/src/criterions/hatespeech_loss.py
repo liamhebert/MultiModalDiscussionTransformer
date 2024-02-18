@@ -25,7 +25,7 @@ class GraphPredictionNodeCrossEntropyConfig(FairseqDataclass):
 class GraphPredictionNodeCrossEntropy(FairseqCriterion):
     def __init__(self, task, positive_weight, negative_weight) -> None:
         super().__init__(task)
-        self.weight = torch.Tensor([negative_weight, positive_weight]).cuda()
+        self.weight = torch.Tensor([negative_weight, positive_weight]).type(torch.HalfTensor).cuda()
 
     def forward(self, model, sample, reduce=True):
         """Compute the loss for the given sample.
@@ -42,10 +42,10 @@ class GraphPredictionNodeCrossEntropy(FairseqCriterion):
         out_all_subset, _ = model(**sample["net_input"])
         targets = sample["net_input"]["batched_data"]["y"]
         target_mask = sample["net_input"]["batched_data"]["y_mask"]
-        logits = out_all_subset[target_mask].type(torch.HalfTensor)
+        logits = out_all_subset[target_mask].type(torch.HalfTensor).cuda()
 
         sample_size = len(logits)
-        targets = torch.flatten(targets).type(torch.LongTensor)
+        targets = torch.flatten(targets).type(torch.LongTensor).cuda()
         with torch.no_grad():
             pred_labels = torch.argmax(F.softmax(logits, dim=-1), dim=-1)
             ncorrect = (pred_labels == targets).sum()
