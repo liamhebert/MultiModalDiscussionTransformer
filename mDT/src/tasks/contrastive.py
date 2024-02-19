@@ -1,6 +1,5 @@
 import logging
 
-import torch
 import torch.nn as nn
 import contextlib
 from dataclasses import dataclass, field

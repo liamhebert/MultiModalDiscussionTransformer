@@ -135,7 +135,7 @@ class MultiGraphormerGraphEncoder(nn.Module):
             self.bert_model,
             self.bert_pooler,
             bert_other_layers,
-            self.node_classifier, # rename bert classifier to node
+            self.node_classifier,
             self.bert_dropout,
         ) = self.build_vit_bert_encoders(
             num_fusion_layers + 1, attention_dropout, activation_dropout
@@ -401,8 +401,6 @@ class MultiGraphormerGraphEncoder(nn.Module):
         x = self.graph_node_feature(
             x, batched_data["in_degree"], batched_data["out_degree"]
         )
-
-        # why was this taken out?
 
         # if perturb is not None:
         #     #ic(torch.mean(torch.abs(x[:, 1, :])))
