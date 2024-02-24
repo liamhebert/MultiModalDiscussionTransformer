@@ -1,6 +1,6 @@
 import logging
 
-
+import torch.nn as nn
 import contextlib
 from dataclasses import dataclass, field
 from omegaconf import II, open_dict, OmegaConf
@@ -210,6 +210,9 @@ class ContrastiveLearningTask(FairseqTask):
             cfg.max_nodes = self.cfg.max_nodes
 
         model = models.build_model(cfg, self)
+        model.encoder.is_hate_task = False
+        model.encoder.node_classifier = nn.Identity()
+
         return model
 
     def max_nodes(self):

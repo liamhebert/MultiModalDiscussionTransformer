@@ -179,6 +179,7 @@ class GraphormerEncoder(FairseqEncoder):
     def __init__(self, args):
         super().__init__(dictionary=None)
         self.max_nodes = args.max_nodes
+        self.is_hate_task = True
 
         self.graph_encoder = MultiGraphormerGraphEncoder(
             # < for graphormer
@@ -243,10 +244,19 @@ class GraphormerEncoder(FairseqEncoder):
             self.embed_out.reset_parameters()
 
     def forward(self, batched_data, **unused):
-        graph_cls = self.graph_encoder(
+        bert_output, bottle_neck, global_embedding = self.graph_encoder(
             batched_data,
         )
-        return graph_cls
+        
+        out_all_subset = [] # empty return value if not hate speech task
+
+        if (self.is_hate_task):
+            out_bert = self.graph_encoder.node_classifier(self.graph_encoder.bert_dropout(self.graph_encoder.bert_pooler(bert_output)))
+            out_graph = self.graph_encoder.node_classifier(self.graph_encoder.bert_dropout(self.graph_encoder.bert_pooler(bottle_neck)))
+            out_all = out_bert + out_graph
+            out_all_subset = out_all / 2
+
+        return out_all_subset, global_embedding
 
     def max_nodes(self):
         """Maximum output length supported by the encoder."""

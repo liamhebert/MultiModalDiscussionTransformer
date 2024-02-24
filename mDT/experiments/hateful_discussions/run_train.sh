@@ -1,4 +1,14 @@
 #!/bin/bash
+# Launch SLURM parameters
+#SBATCH --time=10:00:00
+#SBATCH --mem=64GB
+#SBATCH --account=robin_group
+#SBATCH --cpus-per-task=8
+#SBATCH --gres=gpu:1
+#SBATCH --output=JOB-%j.log
+#SBATCH -e JOB-%j.err
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=y296guo@uwaterloo.ca
 
 export SLURM_TMPDIR=`pwd`
 export src=`pwd`

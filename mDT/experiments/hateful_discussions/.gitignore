@@ -7,3 +7,5 @@ images/
 processed_graphs/
 checkpoints-final/
 *.parquet
+*.err
+*.log

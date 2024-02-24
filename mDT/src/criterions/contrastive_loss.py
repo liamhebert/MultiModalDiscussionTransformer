@@ -28,7 +28,7 @@ class GraphContrastiveLoss(FairseqCriterion):
         if "batched_data" not in sample["net_input"]:
             print(sample["net_input"])
             raise Exception
-        embeddings = model(**sample["net_input"])
+        _, embeddings = model(**sample["net_input"])
         normalized_A = F.normalize(embeddings, p=2, dim=1)
         normalized_B = F.normalize(embeddings, p=2, dim=1)
         sim = (

@@ -25,7 +25,7 @@ class GraphPredictionNodeCrossEntropyConfig(FairseqDataclass):
 class GraphPredictionNodeCrossEntropy(FairseqCriterion):
     def __init__(self, task, positive_weight, negative_weight) -> None:
         super().__init__(task)
-        self.weight = torch.Tensor([negative_weight, positive_weight]).cuda()
+        self.weight = torch.Tensor([negative_weight, positive_weight]).type(torch.HalfTensor).cuda()
 
     def forward(self, model, sample, reduce=True):
         """Compute the loss for the given sample.
@@ -39,15 +39,15 @@ class GraphPredictionNodeCrossEntropy(FairseqCriterion):
         with torch.no_grad():
             natoms = sample["net_input"]["batched_data"]["x"].shape[1]
 
-        logits = model(**sample["net_input"])
-
+        out_all_subset, _ = model(**sample["net_input"])
         targets = sample["net_input"]["batched_data"]["y"]
         target_mask = sample["net_input"]["batched_data"]["y_mask"]
+        logits = out_all_subset[target_mask].type(torch.HalfTensor).cuda()
 
         sample_size = len(logits)
-        targets = torch.flatten(targets)
+        targets = torch.flatten(targets).type(torch.LongTensor).cuda()
         with torch.no_grad():
-            pred_labels = torch.argmax(functional.softmax(logits, dim=-1), dim=-1)
+            pred_labels = torch.argmax(F.softmax(logits, dim=-1), dim=-1)
             ncorrect = (pred_labels == targets).sum()
             num_positive_correct = torch.logical_and(
                 pred_labels == targets, pred_labels == 1
