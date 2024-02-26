@@ -145,13 +145,15 @@ class MultiGraphormerGraphEncoder(nn.Module):
         bert_other_layers = [
             bert_other_layers[i * num_fusion_stack : (i + 1) * num_fusion_stack]
             for i in range(
-                (len(bert_other_layers) + num_fusion_stack - 1) // num_fusion_stack
+                (len(bert_other_layers) + num_fusion_stack - 1)
+                // num_fusion_stack
             )
         ]
         vit_other_layers = [
             vit_other_layers[i * num_fusion_stack : (i + 1) * num_fusion_stack]
             for i in range(
-                (len(vit_other_layers) + num_fusion_stack - 1) // num_fusion_stack
+                (len(vit_other_layers) + num_fusion_stack - 1)
+                // num_fusion_stack
             )
         ]
         self.fusion_layers.extend(
@@ -159,7 +161,9 @@ class MultiGraphormerGraphEncoder(nn.Module):
                 GraphFusionStack(
                     bert_layer, vit_layer, num_bottle_neck, use_projection=True
                 )
-                for bert_layer, vit_layer in zip(bert_other_layers, vit_other_layers)
+                for bert_layer, vit_layer in zip(
+                    bert_other_layers, vit_other_layers
+                )
             ]
         )
         print("NUMBER OF FUSION:", num_fusion_layers)
@@ -193,24 +197,7 @@ class MultiGraphormerGraphEncoder(nn.Module):
         print(
             f"NUMBER OF FUSION LAYERS: {len(self.fusion_layers)} (t: {len(self.fusion_layers) * num_fusion_stack})"
         )
-        # self.layers.extend(
-        #     [
-        #         self.build_graphormer_graph_encoder_layer(
-        #             embedding_dim=self.embedding_dim,
-        #             ffn_embedding_dim=ffn_embedding_dim,
-        #             num_attention_heads=num_attention_heads,
-        #             dropout=self.dropout_module.p,
-        #             attention_dropout=attention_dropout,
-        #             activation_dropout=activation_dropout,
-        #             activation_fn=activation_fn,
-        #             export=export,
-        #             q_noise=q_noise,
-        #             qn_block_size=qn_block_size,
-        #             pre_layernorm=pre_layernorm,
-        #         )
-        #         for _ in range(num_fusion_layers)
-        #     ]
-        # )
+
         self.num_bottle_neck = num_bottle_neck
         self.bottle_neck = nn.Embedding(num_bottle_neck, 768)
 
@@ -229,7 +216,9 @@ class MultiGraphormerGraphEncoder(nn.Module):
                     p.requires_grad = True
 
         if freeze_embeddings:
-            raise NotImplementedError("Freezing embeddings is not implemented yet.")
+            raise NotImplementedError(
+                "Freezing embeddings is not implemented yet."
+            )
 
         if freeze_initial_encoders:
             freeze_module_params(self.bert_model)
@@ -262,9 +251,13 @@ class MultiGraphormerGraphEncoder(nn.Module):
             bert_other_layers = []
         else:
             vit_other_layers = vit_model.encoder.layer[-num_fusion_layers:]
-            vit_model.encoder.layer = vit_model.encoder.layer[:-num_fusion_layers]
+            vit_model.encoder.layer = vit_model.encoder.layer[
+                :-num_fusion_layers
+            ]
             bert_other_layers = bert_model.encoder.layer[-num_fusion_layers:]
-            bert_model.encoder.layer = bert_model.encoder.layer[:-num_fusion_layers]
+            bert_model.encoder.layer = bert_model.encoder.layer[
+                :-num_fusion_layers
+            ]
         # note: this still includes the layernorm and pooler layers at the end, may want to remove
         vit_model = vit_model
         # bert_model = AutoModel.from_pretrained('microsoft/MiniLM-L12-H384-uncased')
@@ -334,25 +327,15 @@ class MultiGraphormerGraphEncoder(nn.Module):
             attention_mask=x_attention_mask,
             input_ids=x_input_ids,
         ).last_hidden_state
-
-        # print(batched_data['y_mask'].shape)
-        # print(x_input_ids.shape)
-        # exit()
-        # batched_data['x_images'] = None
-        # out = self.bert_model(token_type_ids=x_token_type_ids, attention_mask=x_attention_mask, input_ids=x_input_ids).last_hidden_state
         n_graph, n_node = bert_output.size()[:2]
 
-        # print('GRAPH STATS', n_graph, n_node)
-
         if batched_data["x_images"] != None:
-            vit_output = self.vit_model(batched_data["x_images"]).last_hidden_state
-
-            # bottle_neck = self.bottle_neck.weight.unsqueeze(0).repeat(n_graph, 1, 1)
-            # vit_output = torch.cat([bottle_neck, vit_output], dim=1)
+            vit_output = self.vit_model(
+                batched_data["x_images"]
+            ).last_hidden_state
         else:
             vit_output = None
 
-        # bert_output = torch.cat([bottle_neck, bert_output], dim=1)
         bottle_neck = self.bottle_neck.weight.unsqueeze(0).repeat(n_graph, 1, 1)
 
         added_mask = (
@@ -381,7 +364,9 @@ class MultiGraphormerGraphEncoder(nn.Module):
         shape = batched_data["x"].shape
 
         graph_data = (
-            torch.zeros((shape[0], shape[1], 768)).cuda().to(bottle_neck_nodes.dtype)
+            torch.zeros((shape[0], shape[1], 768))
+            .cuda()
+            .to(bottle_neck_nodes.dtype)
         )
         graph_data[mask, :] = bottle_neck_nodes
 
@@ -393,7 +378,7 @@ class MultiGraphormerGraphEncoder(nn.Module):
         padding_mask_cls = torch.zeros(
             n_graph, 1, device=padding_mask.device, dtype=padding_mask.dtype
         )
-        # print(padding_mask_cls.shape, padding_mask.shape)
+
         padding_mask = torch.cat((padding_mask_cls, padding_mask), dim=1)
         mask = torch.cat((padding_mask_cls, mask), dim=1)
         # B x (T+1) x 1
@@ -401,11 +386,6 @@ class MultiGraphormerGraphEncoder(nn.Module):
         x = self.graph_node_feature(
             x, batched_data["in_degree"], batched_data["out_degree"]
         )
-
-        # if perturb is not None:
-        #     #ic(torch.mean(torch.abs(x[:, 1, :])))
-        #     #ic(torch.mean(torch.abs(perturb)))
-        #     x[:, 1:, :] += perturb
 
         # x: B x T x C
 
@@ -443,10 +423,6 @@ class MultiGraphormerGraphEncoder(nn.Module):
             x = x.transpose(0, 1)
 
             bottle_neck[:, 0, :] = x[mask, :]
-            # bert_output[:, 0, :] = bottle_neck + bert_output[:, 0, :]
-
-            # if vit_output != None:
-            #     vit_output[:, 0, :] = bottle_neck[batched_data['x_image_indexes']] + vit_output[:, 0, :]
 
             bert_output, vit_output, bottle_neck = f_layer(
                 bert_output,
@@ -458,7 +434,6 @@ class MultiGraphormerGraphEncoder(nn.Module):
 
             x[mask, :] = bottle_neck[:, 0, :]
             # B x T x C -> T x B x C
-            #   x = g_norm(x)
             x = x.transpose(0, 1)
             if not last_state_only:
                 inner_states.append(x)
@@ -486,6 +461,8 @@ class MultiGraphormerGraphEncoder(nn.Module):
         # we can also try the global embedding
         # print(x.shape)
         global_embedding = x[0, :, :]
+        bert_output = bert_output[:, 0, :]
+        bottle_neck = bottle_neck[:, 0, :]
         return bert_output, bottle_neck, global_embedding
         # print('global', global_embedding.shape)
 
