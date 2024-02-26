@@ -4,8 +4,7 @@ from typing import List
 import torch
 import numpy as np
 
-from ..wrapper import preprocess_item
-from .. import algos
+from .pre_processing import preprocess_item
 
 import copy
 from functools import lru_cache
@@ -102,7 +101,9 @@ class GraphormerPYGDataset(Dataset):
             item.y = item.y.reshape(-1)
             return preprocess_item(item)
         else:
-            raise TypeError("index to a GraphormerPYGDataset can only be an integer.")
+            raise TypeError(
+                "index to a GraphormerPYGDataset can only be an integer."
+            )
 
     @lru_cache(maxsize=16)
     def __getitem__(self, idx):
@@ -112,7 +113,9 @@ class GraphormerPYGDataset(Dataset):
             item.y = item.y.reshape(-1)
             return preprocess_item(item)
         else:
-            raise TypeError("index to a GraphormerPYGDataset can only be an integer.")
+            raise TypeError(
+                "index to a GraphormerPYGDataset can only be an integer."
+            )
 
     def len(self):
         return self.num_data

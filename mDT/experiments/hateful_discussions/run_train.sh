@@ -8,7 +8,7 @@
 #SBATCH --output=JOB-%j.log
 #SBATCH -e JOB-%j.err
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=y296guo@uwaterloo.ca
+#SBATCH --mail-user=l2hebert@uwaterloo.ca
 
 export SLURM_TMPDIR=`pwd`
 export src=`pwd`
@@ -39,7 +39,7 @@ cd $src
 fairseq-train \
 --user-dir ../../src \
 --user-data-dir ./datasets \
---num-workers 12 \
+--num-workers 8 \
 --dataset-name hateful_discussions \
 --task node_prediction \
 --criterion node_cross_entropy \

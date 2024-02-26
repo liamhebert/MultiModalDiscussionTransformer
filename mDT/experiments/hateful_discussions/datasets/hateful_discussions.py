@@ -37,7 +37,7 @@ class HatefulDiscussions(Dataset):
     def processed_file_names(self):
         path = os.path.expandvars("$SLURM_TMPDIR/processed_graphs/processed")
         # TODO: this will be the total number of labels in the dataset, will have to update manually
-        return [path + f"/graph-{i}.pt" for i in range(19328)]
+        return [path + f"/graph-{i}.pt" for i in range(18673)]
 
     def process(self):
         tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
@@ -91,14 +91,14 @@ class HatefulDiscussions(Dataset):
         with open(path_slurm + "/test-idx.txt") as f:
             for line in f:
                 valid_idx += [int(line)]
-
+        print('INDEXES', train_idx, valid_idx)
         duped = pd.read_parquet(path_slurm + "/duped.parquet")["text"].unique()
 
         # with open(self.raw_file_names[0], 'r') as file, open(os.environ['SLURM_TMPDIR'] + '/train-idx-many.txt', 'w') as train, open(os.environ['SLURM_TMPDIR'] + '/test-idx-many.txt', 'w') as valid:
         with open(self.raw_file_names[0], "r") as file, open(
             path_slurm + "/train-idx-many.txt", "w"
         ) as train, open(path_slurm + "/test-idx-many.txt", "w") as valid:
-            for graph_num, line in tqdm(enumerate(file), total=8927):
+            for graph_num, line in tqdm(enumerate(file), total=10835):
                 raw_data = json.loads(line)
                 self.get_relative_depth(raw_data)
                 self.spread_downwards(raw_data)
@@ -217,6 +217,8 @@ class HatefulDiscussions(Dataset):
                     elif graph_num in train_idx:
                         total += 1
                         train.write(str(self.k) + "\n")
+                    else:
+                        print('skipping', graph_num, flush=True)
                     self.k += 1
 
         print("FINAL K", self.k)

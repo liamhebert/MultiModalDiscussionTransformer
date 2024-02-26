@@ -1,14 +1,31 @@
-from functools import lru_cache
+"""
+General wrappers for datasets and dataloaders
 
-import ogb
+The organization of dataloading functions as follows:
+- `pyg_datasets` contain dataloading functions for loading and pre-processing 
+    PyG objects into general data objects we can use. Includes logic for splitting
+    datasets into train, validation, and test sets
+- `GraphormerDataset` is a wrapper for PyG datasets and provides a unified interface 
+    for datasets. This returns individual samples from the dataset without batching
+- `ContrastiveBatchedDataDataset` and `NodePredictionBatchedDataDataset` interface 
+    with `GraphormerDataset` and provide task-specific collator functions to 
+    batch data for contrastive and node prediction tasks
+- `EpochShuffleDataset` is a wrapper for both datasets to include shuffling logic
+    for each epoch
+
+As such, the hierarchy of the dataloading process is:
+`pyg_datasets` 
+-> `GraphormerDataset` 
+-> `ContrastiveBatchedDataDataset` or `NodePredictionBatchedDataDataset` 
+-> `EpochShuffleDataset`
+"""
+
 import numpy as np
-import torch
-from torch.nn import functional as F
 from fairseq.data import data_utils, FairseqDataset, BaseWrapperDataset
 
 from .collator import contrastive_collator, node_collator
 
-from typing import Optional, Union
+from typing import Optional
 from torch_geometric.data import Data as PYGDataset
 from .pyg_datasets import PYGDatasetLookupTable, GraphormerPYGDataset
 
@@ -63,22 +80,6 @@ class NodePredictionBatchedDataDataset(FairseqDataset):
         )
 
 
-class TargetDataset(FairseqDataset):
-    def __init__(self, dataset):
-        super().__init__()
-        self.dataset = dataset
-
-    @lru_cache(maxsize=16)
-    def __getitem__(self, index):
-        return self.dataset[index].y
-
-    def __len__(self):
-        return len(self.dataset)
-
-    def collater(self, samples):
-        return torch.stack(samples, dim=0)
-
-
 class GraphormerDataset:
     def __init__(
         self,
@@ -94,12 +95,19 @@ class GraphormerDataset:
         if dataset is not None:
             if dataset_source == "pyg":
                 self.dataset = GraphormerPYGDataset(
-                    dataset, train_idx=train_idx, valid_idx=valid_idx, test_idx=test_idx
+                    dataset,
+                    train_idx=train_idx,
+                    valid_idx=valid_idx,
+                    test_idx=test_idx,
                 )
             else:
-                raise ValueError("customized dataset can only have source pyg or dgl")
+                raise ValueError(
+                    "customized dataset can only have source pyg or dgl"
+                )
         elif dataset_source == "pyg":
-            self.dataset = PYGDatasetLookupTable.GetPYGDataset(dataset_spec, seed=seed)
+            self.dataset = PYGDatasetLookupTable.GetPYGDataset(
+                dataset_spec, seed=seed
+            )
         self.setup()
 
     def setup(self):
