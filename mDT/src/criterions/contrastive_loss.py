@@ -16,7 +16,6 @@ from torch.nn import functional as F
 from fairseq import metrics
 from src.models import GraphormerModel
 from fairseq.criterions import FairseqCriterion, register_criterion
-import torch.nn as nn
 from typing import Any, Dict, List, Tuple
 from dataclasses import dataclass, field
 
