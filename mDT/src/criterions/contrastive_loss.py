@@ -138,11 +138,13 @@ class GraphContrastiveLoss(FairseqCriterion):
 
         # compute loss weights. Hard labels are given 1 weight, soft labels
         # are given extra_weight
-        soft_matrix = torch.where(soft_labels, extra_weight, 1.0).cuda()
+        soft_matrix = torch.where(soft_labels, extra_weight, 1).cuda()
         # Since we do intra-modality contrastive loss, remove diagonal from
         # loss matrix. We don't want to include itself in the loss
+
+        # having to set this to cuda() is gross, there should be a better way
         soft_matrix = torch.where(
-            torch.eye(soft_matrix.size(0)).eq(1), 0, soft_matrix
+            torch.eye(soft_matrix.size(0)).eq(1).cuda(), 0, soft_matrix
         )
 
         # compute sample metrics
