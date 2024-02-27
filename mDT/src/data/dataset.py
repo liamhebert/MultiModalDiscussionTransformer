@@ -157,7 +157,7 @@ class ContrastiveBatchedDataDataset(BatchedDataDataset):
         - hard_y: (torch.Tensor) tensor of labels of the polar opposite communities
         - y: (torch.Tensor) tensor of labels of which topic the community belongs to
         """
-        items = [item for item in samples if item is not None]
+        samples = [item for item in samples if item is not None]
         items = [
             (
                 item.idx,
@@ -170,11 +170,11 @@ class ContrastiveBatchedDataDataset(BatchedDataDataset):
                 item.distance,
                 item.y,
             )
-            for item in items
+            for item in samples
         ]
-        collated_output = collator(items, self.spatial_pos_max)
-        hard_ys = [item.hard_y for item in items]
+        hard_ys = [item.hard_y for item in samples]
         hard_y = torch.cat(hard_ys)
+        collated_output = collator(items, self.spatial_pos_max)
         collated_output["hard_y"] = hard_y
         return collated_output
 
@@ -191,24 +191,22 @@ class NodeBatchedDataDataset(BatchedDataDataset):
         - y: (torch.Tensor) tensor of labels for each node in the graph.
             If a node does not have a label, it is padded with 0
         """
-        items = [item for item in samples if item is not None]
+        samples = [sample for sample in samples if sample is not None]
         items = [
             (
                 item.idx,
                 item.attn_bias,
                 item.spatial_pos,
                 item.in_degree,
-                item.out_degree,
                 item.x,
-                item.y,
-                item.y_mask,
                 item.x_image_index,
                 item.x_images,
                 item.distance,
+                item.y,
             )
-            for item in items
+            for item in samples
         ]
-        y_masks = [item.y_mask for item in items]
+        y_masks = [item.y_mask for item in samples]
         y_mask = torch.cat(y_masks).bool()
         collated_output = collator(items, self.spatial_pos_max)
         collated_output["y_mask"] = y_mask

@@ -214,9 +214,9 @@ class GraphormerEncoder(FairseqEncoder):
 
         self.node_encoder_stack = nn.ModuleList(
             [
-                self.graph_encoder.bert_pooler,
-                self.graph_encoder.bert_dropout,
-                self.graph_encoder.bert_classifier,
+                self.graph_encoder.text_pooler,
+                self.graph_encoder.text_dropout,
+                self.graph_encoder.node_classifier,
             ]
         )
 
@@ -254,7 +254,7 @@ class GraphormerEncoder(FairseqEncoder):
             self.embed_out.reset_parameters()
 
     def forward(self, batched_data, **unused):
-        text_output, graph_node_embedding, global_embedding = (
+        text_node_embedding, graph_node_embedding, global_embedding = (
             self.graph_encoder(
                 batched_data,
             )
@@ -263,15 +263,17 @@ class GraphormerEncoder(FairseqEncoder):
         out_all_subset = []  # empty return value if not hate speech task
 
         for layer in self.node_encoder_stack:
-            out_bert = layer(text_output)
-            out_graph = layer(graph_node_embedding)
+            # print("LAYER", text_node_embedding.shape, layer)
+            text_node_embedding = layer(text_node_embedding)
+            # print("LAYER", text_node_embedding.shape, layer)
+            graph_node_embedding = layer(graph_node_embedding)
 
         # TODO(liamhebert): This is wasted computation if we don't require node
         # level embeddings.
-        out_all = out_bert + out_graph
-        out_all_subset = out_all / 2
+        out_all = text_node_embedding + graph_node_embedding
+        out_all = out_all / 2
 
-        return out_all_subset, global_embedding
+        return out_all, global_embedding
 
     def max_nodes(self):
         """Maximum output length supported by the encoder."""

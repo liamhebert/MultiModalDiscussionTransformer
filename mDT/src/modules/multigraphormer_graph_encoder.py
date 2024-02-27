@@ -132,20 +132,20 @@ class MultiGraphormerGraphEncoder(nn.Module):
             self.vit_model,
             self.vit_pooler,
             vit_other_layers,
-            self.bert_model,
-            self.bert_pooler,
-            bert_other_layers,
+            self.text_model,
+            self.text_pooler,
+            text_other_layers,
             self.node_classifier,
-            self.bert_dropout,
+            self.text_dropout,
         ) = self.build_vit_bert_encoders(
             num_fusion_layers + 1, attention_dropout, activation_dropout
         )
         # self.bert = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased')
         self.fusion_layers = nn.ModuleList([])
-        bert_other_layers = [
-            bert_other_layers[i * num_fusion_stack : (i + 1) * num_fusion_stack]
+        text_other_layers = [
+            text_other_layers[i * num_fusion_stack : (i + 1) * num_fusion_stack]
             for i in range(
-                (len(bert_other_layers) + num_fusion_stack - 1)
+                (len(text_other_layers) + num_fusion_stack - 1)
                 // num_fusion_stack
             )
         ]
@@ -159,10 +159,10 @@ class MultiGraphormerGraphEncoder(nn.Module):
         self.fusion_layers.extend(
             [
                 GraphFusionStack(
-                    bert_layer, vit_layer, num_bottle_neck, use_projection=True
+                    text_layer, vit_layer, num_bottle_neck, use_projection=True
                 )
-                for bert_layer, vit_layer in zip(
-                    bert_other_layers, vit_other_layers
+                for text_layer, vit_layer in zip(
+                    text_other_layers, vit_other_layers
                 )
             ]
         )
@@ -221,10 +221,10 @@ class MultiGraphormerGraphEncoder(nn.Module):
             )
 
         if freeze_initial_encoders:
-            freeze_module_params(self.bert_model)
+            freeze_module_params(self.text_model)
             freeze_module_params(self.vit_model)
             unfreeze_module_params(self.node_classifier)
-            unfreeze_module_params(self.bert_pooler)
+            unfreeze_module_params(self.text_pooler)
             unfreeze_module_params(self.vit_pooler)
 
         for layer in range(n_trans_layers_to_freeze):
@@ -322,7 +322,7 @@ class MultiGraphormerGraphEncoder(nn.Module):
         x_token_type_ids = batched_data["x_token_type_ids"][mask, :]
         x_attention_mask = batched_data["x_attention_mask"][mask, :]
         x_input_ids = batched_data["x"][mask, :]
-        bert_output = self.bert_model(
+        bert_output = self.text_model(
             token_type_ids=x_token_type_ids,
             attention_mask=x_attention_mask,
             input_ids=x_input_ids,
@@ -461,8 +461,8 @@ class MultiGraphormerGraphEncoder(nn.Module):
         # we can also try the global embedding
         # print(x.shape)
         global_embedding = x[0, :, :]
-        bert_output = bert_output[:, 0, :]
-        bottle_neck = bottle_neck[:, 0, :]
+        # bert_output = bert_output[:, 0, :]
+        # bottle_neck = bottle_neck[:, 0, :]
         return bert_output, bottle_neck, global_embedding
         # print('global', global_embedding.shape)
 

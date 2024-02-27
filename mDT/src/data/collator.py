@@ -146,7 +146,7 @@ def collator(items: List[List[torch.Tensor]], spatial_pos_max=10):
         x_images = None
     x_image_indexes = torch.cat(
         [
-            pad_1d_unsqueeze(z, -1, pad_value=False).squeeze(0)
+            pad_1d_unsqueeze(z, -1, pad_value=False, shift=False).squeeze(0)
             for z in x_image_indexes
         ]
     ).bool()
