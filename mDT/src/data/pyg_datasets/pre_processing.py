@@ -1,16 +1,16 @@
 import torch
 import numpy as np
 import pyximport
-import torch.distributed as dist
 
 pyximport.install(setup_args={"include_dirs": np.get_include()})
-from . import algos
 
 
 @torch.jit.script
 def convert_to_single_emb(x, offset: int = 512):
     feature_num = x.size(1) if len(x.size()) > 1 else 1
-    feature_offset = 1 + torch.arange(0, feature_num * offset, offset, dtype=torch.long)
+    feature_offset = 1 + torch.arange(
+        0, feature_num * offset, offset, dtype=torch.long
+    )
     x = x + feature_offset
     return x
 
@@ -40,17 +40,23 @@ def preprocess_item(item):
         map(
             lambda x: list(
                 map(
-                    lambda k: mapping[cantor(k)]
-                    if cantor(k) in mapping
-                    else mapping[cantor([5, 5])],
+                    lambda k: (
+                        mapping[cantor(k)]
+                        if cantor(k) in mapping
+                        else mapping[cantor([5, 5])]
+                    ),
                     x,
                 )
             ),
             item.distance_matrix,
         )
     )
-    distance = list(map(lambda x: list(map(lambda k: sum(k), x)), item.distance_matrix))
-    attn_bias = torch.zeros([N + 1, N + 1], dtype=torch.float)  # with graph token
+    distance = list(
+        map(lambda x: list(map(lambda k: sum(k), x)), item.distance_matrix)
+    )
+    attn_bias = torch.zeros(
+        [N + 1, N + 1], dtype=torch.float
+    )  # with graph token
 
     # combine
     item.x = x

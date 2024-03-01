@@ -119,10 +119,13 @@ class GraphormerModel(FairseqEncoderModel):
         parser.add_argument(
             "--no-token-positional-embeddings",
             action="store_true",
-            help="if set, disables positional embeddings" " (outside self attention)",
+            help="if set, disables positional embeddings"
+            " (outside self attention)",
         )
         parser.add_argument(
-            "--max-positions", type=int, help="number of positional embeddings to learn"
+            "--max-positions",
+            type=int,
+            help="number of positional embeddings to learn",
         )
 
         # Arguments related to parameter initialization
@@ -179,7 +182,6 @@ class GraphormerEncoder(FairseqEncoder):
     def __init__(self, args):
         super().__init__(dictionary=None)
         self.max_nodes = args.max_nodes
-        self.is_hate_task = True
 
         self.graph_encoder = MultiGraphormerGraphEncoder(
             # < for graphormer
@@ -208,6 +210,14 @@ class GraphormerEncoder(FairseqEncoder):
             apply_graphormer_init=args.apply_graphormer_init,
             activation_fn=args.activation_fn,
             freeze_initial_encoders=args.freeze_initial_encoders,
+        )
+
+        self.node_encoder_stack = nn.ModuleList(
+            [
+                self.graph_encoder.text_pooler,
+                self.graph_encoder.text_dropout,
+                self.graph_encoder.node_classifier,
+            ]
         )
 
         self.share_input_output_embed = args.share_encoder_input_output_embed
@@ -244,19 +254,26 @@ class GraphormerEncoder(FairseqEncoder):
             self.embed_out.reset_parameters()
 
     def forward(self, batched_data, **unused):
-        bert_output, bottle_neck, global_embedding = self.graph_encoder(
-            batched_data,
+        text_node_embedding, graph_node_embedding, global_embedding = (
+            self.graph_encoder(
+                batched_data,
+            )
         )
-        
-        out_all_subset = [] # empty return value if not hate speech task
 
-        if (self.is_hate_task):
-            out_bert = self.graph_encoder.node_classifier(self.graph_encoder.bert_dropout(self.graph_encoder.bert_pooler(bert_output)))
-            out_graph = self.graph_encoder.node_classifier(self.graph_encoder.bert_dropout(self.graph_encoder.bert_pooler(bottle_neck)))
-            out_all = out_bert + out_graph
-            out_all_subset = out_all / 2
+        out_all_subset = []  # empty return value if not hate speech task
 
-        return out_all_subset, global_embedding
+        for layer in self.node_encoder_stack:
+            # print("LAYER", text_node_embedding.shape, layer)
+            text_node_embedding = layer(text_node_embedding)
+            # print("LAYER", text_node_embedding.shape, layer)
+            graph_node_embedding = layer(graph_node_embedding)
+
+        # TODO(liamhebert): This is wasted computation if we don't require node
+        # level embeddings.
+        out_all = text_node_embedding + graph_node_embedding
+        out_all = out_all / 2
+
+        return out_all, global_embedding
 
     def max_nodes(self):
         """Maximum output length supported by the encoder."""
@@ -295,7 +312,9 @@ def base_architecture(args):
     args.apply_graphormer_init = getattr(args, "apply_graphormer_init", False)
 
     args.activation_fn = getattr(args, "activation_fn", "gelu")
-    args.encoder_normalize_before = getattr(args, "encoder_normalize_before", True)
+    args.encoder_normalize_before = getattr(
+        args, "encoder_normalize_before", True
+    )
 
 
 @register_model_architecture("multi_graphormer", "multi_graphormer_base")
@@ -308,8 +327,12 @@ def graphormer_base_architecture(args):
     args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 80)
 
     args.activation_fn = getattr(args, "activation_fn", "gelu")
-    args.freeze_initial_encoders = getattr(args, "freeze_initial_encoders", False)
-    args.encoder_normalize_before = getattr(args, "encoder_normalize_before", True)
+    args.freeze_initial_encoders = getattr(
+        args, "freeze_initial_encoders", False
+    )
+    args.encoder_normalize_before = getattr(
+        args, "encoder_normalize_before", True
+    )
     args.apply_graphormer_init = getattr(args, "apply_graphormer_init", False)
     args.share_encoder_input_output_embed = getattr(
         args, "share_encoder_input_output_embed", False

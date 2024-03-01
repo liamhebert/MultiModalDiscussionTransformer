@@ -34,21 +34,32 @@ class GraphFusionLayer(nn.Module):
         bert_attention_mask: Optional[torch.FloatTensor] = None,
         x_image_indexes: Optional[torch.Tensor] = None,
     ):
-        bert_hidden_states_in = torch.cat([bottle_neck, bert_hidden_states], dim=1)
+        bert_hidden_states_in = torch.cat(
+            [bottle_neck, bert_hidden_states], dim=1
+        )
 
         bert_hidden_output_out = self.bert_forward(
             bert_hidden_states_in, bert_attention_mask, None, None, None
         )
 
-        bert_hidden_output = bert_hidden_output_out[:, self.num_bottle_neck_tokens :]
-        bottle_neck_output = bert_hidden_output_out[:, : self.num_bottle_neck_tokens]
-
+        bert_hidden_output = bert_hidden_output_out[
+            :, self.num_bottle_neck_tokens :
+        ]
+        bottle_neck_output = bert_hidden_output_out[
+            :, : self.num_bottle_neck_tokens
+        ]
+        # print("BOTTLENECK", bottle_neck.shape)
+        # print("IMAGE_INDEX", x_image_indexes.shape)
+        # print("APPLIED", bottle_neck[x_image_indexes].shape)
+        # print("VIT_HIDDEN", vit_hidden_states.shape)
         if vit_hidden_states != None:
             vit_hidden_states_in = torch.cat(
                 [bottle_neck[x_image_indexes], vit_hidden_states], dim=1
             )
             vit_hidden_output_out = self.vit_forward(vit_hidden_states_in)
-            vit_hidden_output = vit_hidden_output_out[:, self.num_bottle_neck_tokens :]
+            vit_hidden_output = vit_hidden_output_out[
+                :, self.num_bottle_neck_tokens :
+            ]
             bottle_neck_output[x_image_indexes] = (
                 vit_hidden_output_out[:, : self.num_bottle_neck_tokens]
                 + bottle_neck_output[x_image_indexes]
@@ -80,7 +91,9 @@ class GraphFusionLayer(nn.Module):
             )
         else:
             # layer_outputs = self.vit_encoder(hidden_states, layer_head_mask, None)
-            layer_outputs = self.vit_encoder(hidden_states, layer_head_mask, False)
+            layer_outputs = self.vit_encoder(
+                hidden_states, layer_head_mask, False
+            )
 
         hidden_states = layer_outputs[0]
 
@@ -138,14 +151,21 @@ class GraphFusionLayer(nn.Module):
 
 class GraphFusionStack(nn.Module):
     def __init__(
-        self, bert_layers, vit_layers, num_bottle_neck_tokens, use_projection=False
+        self,
+        bert_layers,
+        vit_layers,
+        num_bottle_neck_tokens,
+        use_projection=False,
     ) -> None:
         super().__init__()
 
         self.fusion_layers = nn.ModuleList(
             [
                 GraphFusionLayer(
-                    bert_layer, vit_layer, num_bottle_neck_tokens, use_projection
+                    bert_layer,
+                    vit_layer,
+                    num_bottle_neck_tokens,
+                    use_projection,
                 )
                 for bert_layer, vit_layer in zip(bert_layers, vit_layers)
             ]
