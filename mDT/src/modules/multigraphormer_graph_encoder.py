@@ -202,8 +202,8 @@ class MultiGraphormerGraphEncoder(nn.Module):
         self.bottle_neck = nn.Embedding(num_bottle_neck, 768)
 
         # Apply initialization of model params after building the model
-        if self.apply_graphormer_init:
-            self.apply(init_graphormer_params)
+        # if self.apply_graphormer_init:
+        #     self.apply(init_graphormer_params)
 
         def freeze_module_params(m):
             if m is not None:
@@ -461,8 +461,6 @@ class MultiGraphormerGraphEncoder(nn.Module):
         # we can also try the global embedding
         # print(x.shape)
         global_embedding = x[0, :, :]
-        # bert_output = bert_output[:, 0, :]
-        # bottle_neck = bottle_neck[:, 0, :]
         return bert_output, bottle_neck, global_embedding
         # print('global', global_embedding.shape)
 

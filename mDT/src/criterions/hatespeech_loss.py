@@ -17,6 +17,7 @@ import torch.nn as nn
 from dataclasses import dataclass, field
 from src.models import GraphormerModel
 from typing import Any, Dict, List, Tuple
+import logging
 
 
 @dataclass
@@ -55,7 +56,9 @@ class GraphPredictionNodeCrossEntropy(FairseqCriterion):
         """
         super().__init__(task)
         self.weight = (
-            torch.Tensor([negative_weight, positive_weight])
+            torch.tensor(
+                [negative_weight, positive_weight], requires_grad=False
+            )
             .type(torch.HalfTensor)
             .cuda()
         )
@@ -92,6 +95,7 @@ class GraphPredictionNodeCrossEntropy(FairseqCriterion):
         logits = comment_embeddings[target_mask].type(torch.HalfTensor).cuda()
 
         sample_size = len(logits)
+
         targets = torch.flatten(targets).type(torch.LongTensor).cuda()
 
         # compute sample metrics
@@ -135,7 +139,6 @@ class GraphPredictionNodeCrossEntropy(FairseqCriterion):
         """
         loss_sum = sum(log.get("loss", 0) for log in logging_outputs)
         sample_size = sum(log.get("sample_size", 0) for log in logging_outputs)
-        nsentences = sum(log.get("nsentences", 0) for log in logging_outputs)
 
         metrics.log_scalar("loss", loss_sum / sample_size, sample_size, round=3)
         if len(logging_outputs) > 0 and "ncorrect" in logging_outputs[0]:
@@ -162,14 +165,12 @@ class GraphPredictionNodeCrossEntropy(FairseqCriterion):
                 f1 = 0
             else:
                 f1 = 2 * ((precision * recall) / (precision + recall))
-            accuracy = ncorrect / nsentences
+            accuracy = ncorrect / sample_size
 
-            metrics.log_scalar("accuracy", accuracy, nsentences, round=3)
-            metrics.log_scalar("recall", recall, total_positive, round=3)
-            metrics.log_scalar(
-                "precision", precision, num_pred_positive, round=3
-            )
-            metrics.log_scalar("f1", f1, total_positive, round=3)
+            metrics.log_scalar("accuracy", accuracy, sample_size, round=3)
+            metrics.log_scalar("recall", recall, sample_size, round=3)
+            metrics.log_scalar("precision", precision, sample_size, round=3)
+            metrics.log_scalar("f1", f1, sample_size, round=3)
 
     @staticmethod
     def logging_outputs_can_be_summed() -> bool:

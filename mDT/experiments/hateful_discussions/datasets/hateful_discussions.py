@@ -26,22 +26,28 @@ class HatefulDiscussions(Dataset):
         pre_filter: Optional[Callable] = None,
     ):
         self.k = 0
+        self.data = {}
         super().__init__(root, transform, pre_transform, pre_filter)
 
     @property
     def raw_file_names(self):
         path = os.path.expandvars("$SLURM_TMPDIR/")
-        return [path + "/raw_graphs.json"]
+        return [path + "/pruned-with-images-fixed-big.json"]
 
     @property
     def processed_file_names(self):
-        path = os.path.expandvars("$SLURM_TMPDIR/processed_graphs/processed")
-        # TODO: this will be the total number of labels in the dataset, will have to update manually
-        return [path + f"/graph-{i}.pt" for i in range(18673)]
+        path = os.path.expandvars(f"$SLURM_TMPDIR/{self.root}/processed")
+        for graph in tqdm(glob(path + f"/graph-*.pt")):
+            # make sure graphs are appropriately sorted
+            idx = int(graph.split("-")[-1][:-3])
+            self.data[idx] = graph
+        return [os.path.basename(x) for x in list(glob(path + f"/graph-*.pt"))]
 
     def process(self):
         tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-        extractor = ViTImageProcessor.from_pretrained("google/vit-base-patch16-224")
+        extractor = ViTImageProcessor.from_pretrained(
+            "google/vit-base-patch16-224"
+        )
         markdown_regex = re.compile(
             "^\[([\w\s\d]+)\]\(((?:\/|https?:\/\/)[\w\d./?=#]+)\)$"
         )
@@ -68,7 +74,9 @@ class HatefulDiscussions(Dataset):
                     )
                 else:
                     body = (
-                        "\n" + clean_urls(x[0]["body"]) if x[0]["body"] != "NA" else ""
+                        "\n" + clean_urls(x[0]["body"])
+                        if x[0]["body"] != "NA"
+                        else ""
                     )
                 # if len(x[1]) != 0:
                 #     return '[IMG1] ' + x[0]['title'] + ' [IMG2] ' + body + '\n'
@@ -91,14 +99,14 @@ class HatefulDiscussions(Dataset):
         with open(path_slurm + "/test-idx.txt") as f:
             for line in f:
                 valid_idx += [int(line)]
-        print('INDEXES', train_idx, valid_idx)
+
         duped = pd.read_parquet(path_slurm + "/duped.parquet")["text"].unique()
 
         # with open(self.raw_file_names[0], 'r') as file, open(os.environ['SLURM_TMPDIR'] + '/train-idx-many.txt', 'w') as train, open(os.environ['SLURM_TMPDIR'] + '/test-idx-many.txt', 'w') as valid:
         with open(self.raw_file_names[0], "r") as file, open(
             path_slurm + "/train-idx-many.txt", "w"
         ) as train, open(path_slurm + "/test-idx-many.txt", "w") as valid:
-            for graph_num, line in tqdm(enumerate(file), total=10835):
+            for graph_num, line in tqdm(enumerate(file), total=33192):
                 raw_data = json.loads(line)
                 self.get_relative_depth(raw_data)
                 self.spread_downwards(raw_data)
@@ -108,9 +116,11 @@ class HatefulDiscussions(Dataset):
                 g = networkx.Graph()
                 adj = [
                     (
-                        x[0]["parent_id"]
-                        if x[0]["parent_id"] != x[0]["link_id"]
-                        else "top_level",
+                        (
+                            x[0]["parent_id"]
+                            if x[0]["parent_id"] != x[0]["link_id"]
+                            else "top_level"
+                        ),
                         x[0]["id"],
                     )
                     for x in data.values()
@@ -131,7 +141,10 @@ class HatefulDiscussions(Dataset):
                     if "parent_id" not in x[0]:
                         return (
                             "top_level",
-                            {"x": x[0]["id"], "y": x[3] if not is_duped else "NA"},
+                            {
+                                "x": x[0]["id"],
+                                "y": x[3] if not is_duped else "NA",
+                            },
                         )
                     return (
                         x[0]["id"],
@@ -185,8 +198,16 @@ class HatefulDiscussions(Dataset):
                     "AffiliationDirectedAbuse",
                 ]
                 good_labels = ["Neutral", "lti_normal", "NDG", "HOM"]
-                true_ys = [x for x in ys if x in hate_labels or x in good_labels]
-                # all_ys = graph.y
+                true_ys = [
+                    x for x in ys if x in hate_labels or x in good_labels
+                ]
+
+                # To help with training dynamics a bit, we seperate graphs with
+                # multiple labels to seperate graphs with only one label. For
+                # example, a graph with 3 labels will have three graphs and will
+                # appear three times during a training epoch. Note that because
+                # of label masking, the model loss will only consist of the
+                # unique labeled node of the graph.
                 for i in range(len(true_ys)):
                     z = 0
                     graph_y = ["NA" for _ in ys]
@@ -218,7 +239,7 @@ class HatefulDiscussions(Dataset):
                         total += 1
                         train.write(str(self.k) + "\n")
                     else:
-                        print('skipping', graph_num, flush=True)
+                        print("skipping", graph_num, flush=True)
                     self.k += 1
 
         print("FINAL K", self.k)
@@ -261,7 +282,10 @@ class HatefulDiscussions(Dataset):
         id = comment["data"]["id"]
         i = 0
         if comment["data"]["id"] in data:
-            if comment["data"]["body"] != data[comment["data"]["id"]][0]["body"]:
+            if (
+                comment["data"]["body"]
+                != data[comment["data"]["id"]][0]["body"]
+            ):
                 if data[comment["data"]["id"]][0]["body"] == "[deleted]":
                     if len(comment["images"]) == 0:
                         comment["images"] = root_images
@@ -285,8 +309,10 @@ class HatefulDiscussions(Dataset):
             self.collapse_tree(child, data, root_images)
 
     def get(self, idx):
-        path = self.processed_file_names[idx]
-        return torch.load(path)
+        data = torch.load(self.data[idx])
+        if data is None:
+            raise Exception("Loaded in None graph")
+        return torch.load(self.data[idx])
 
 
 if __name__ == "__main__":
