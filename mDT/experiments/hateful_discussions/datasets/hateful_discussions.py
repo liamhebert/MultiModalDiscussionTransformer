@@ -100,13 +100,13 @@ class HatefulDiscussions(Dataset):
             for line in f:
                 valid_idx += [int(line)]
 
-        duped = pd.read_parquet(path_slurm + "/duped.parquet")["text"].unique()
-
         # with open(self.raw_file_names[0], 'r') as file, open(os.environ['SLURM_TMPDIR'] + '/train-idx-many.txt', 'w') as train, open(os.environ['SLURM_TMPDIR'] + '/test-idx-many.txt', 'w') as valid:
         with open(self.raw_file_names[0], "r") as file, open(
             path_slurm + "/train-idx-many.txt", "w"
         ) as train, open(path_slurm + "/test-idx-many.txt", "w") as valid:
             for graph_num, line in tqdm(enumerate(file), total=33192):
+                if graph_num not in valid_idx and graph_num not in train_idx:
+                    continue
                 raw_data = json.loads(line)
                 self.get_relative_depth(raw_data)
                 self.spread_downwards(raw_data)
@@ -129,26 +129,17 @@ class HatefulDiscussions(Dataset):
 
                 # print(adj)
                 def make_features(x):
-                    is_duped = (
-                        x[3] == "NA"
-                        or (
-                            "link_id" not in x[0]
-                            and x[0]["title"] + "\n" + x[0]["body"] in duped
-                        )
-                        or ("body" in x[0] and x[0]["body"] in duped)
-                    )
-
                     if "parent_id" not in x[0]:
                         return (
                             "top_level",
                             {
                                 "x": x[0]["id"],
-                                "y": x[3] if not is_duped else "NA",
+                                "y": x[3],
                             },
                         )
                     return (
                         x[0]["id"],
-                        {"x": x[0]["id"], "y": x[3] if not is_duped else "NA"},
+                        {"x": x[0]["id"], "y": x[3]},
                     )
 
                 g.add_nodes_from([make_features(x) for x in data.values()])
@@ -238,8 +229,6 @@ class HatefulDiscussions(Dataset):
                     elif graph_num in train_idx:
                         total += 1
                         train.write(str(self.k) + "\n")
-                    else:
-                        print("skipping", graph_num, flush=True)
                     self.k += 1
 
         print("FINAL K", self.k)

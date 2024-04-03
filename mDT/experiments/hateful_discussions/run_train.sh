@@ -36,10 +36,10 @@ fairseq-train \
     --num-classes 1 \
     --attention-dropout 0.3 --act-dropout 0.3 --dropout 0.4 \
     --optimizer adam --adam-betas '(0.9, 0.999)' --adam-eps 1e-8 --weight-decay 0.01 \
-    --lr-scheduler polynomial_decay --power 1 --warmup-updates 3270 --total-num-update 10900 \
+    --lr-scheduler polynomial_decay --power 1 --warmup-updates 9732 --total-num-update 32440 \
     --lr 3e-5 --end-learning-rate 3e-7 \
     --spatial-pos-max $3 \
-    --validate-interval-updates 100 \
+    --validate-interval-updates 300 \
     --batch-size 12 \
     --required-batch-size-multiple 1 \
     --fp16 \
