@@ -17,16 +17,6 @@ export WANDB_NAME=fixed_hate_only--$(date +%D)--$(hostname)--${RANDOM}
 export WANDB_ENTITY='multi-modal-uwaterloo'
 export WANDB_PROJECT='Multi-Modal Discussion Transformer'
 
-# if [ ! -f images.tar.gz ]
-# then
-#     echo "downloading files!"
-#     wget https://vault.cs.uwaterloo.ca/s/d2o9sWGrSjr7Pyd/download/duped-images.parquet
-#     wget https://vault.cs.uwaterloo.ca/s/EdSCwJwJ4z5cHLX/download/raw_graphs.json
-#     wget https://vault.cs.uwaterloo.ca/s/yKYw39ZnHZpGwNQ/download/image_indexes.tar.gz
-#     tar -xvf image_indexes.tar.gz
-#     wget https://vault.cs.uwaterloo.ca/s/WXMwEMZpmJE7JkR/download/images.tar.gz
-# fi
-
 cp big_indices/train_index-$6-images-big.txt $SLURM_TMPDIR/train-idx.txt
 cp big_indices/test_index-$6-images-big.txt $SLURM_TMPDIR/test-idx.txt
 cp duped-images-big.parquet $SLURM_TMPDIR/duped.parquet
