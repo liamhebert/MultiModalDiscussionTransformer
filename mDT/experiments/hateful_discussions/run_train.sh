@@ -1,7 +1,20 @@
 #!/bin/bash
+# Launch SLURM parameters
+#SBATCH --time=10:00:00
+#SBATCH --mem=64GB
+#SBATCH --account=rcohen_group
+#SBATCH --partition=ALL
+#SBATCH --cpus-per-task=8
+#SBATCH --gres=gpu:1
+#SBATCH --output=JOB-%j.log
+#SBATCH -e JOB-%j.err
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=y296guo@uwaterloo.ca
 
 export SLURM_TMPDIR=`pwd`
 export src=`pwd`
+
+export WANDB_NAME=transfer-learning--$(date +%D)--$(hostname)--${RANDOM}
 
 if [ ! -f images.tar.gz ]
 then
@@ -54,10 +67,13 @@ fairseq-train \
 --distributed-world-size 1 \
 --encoder-ffn-embed-dim 768 \
 --encoder-attention-heads 12 \
---max-epoch 10 \
+--max-epoch 57 \
 --wandb-project "Multi-Modal Discussion Transformer" \
---save-dir "./checkpoints-final/`date +%D`/`hostname`-${RANDOM}" \
+--save-dir "./checkpoints-final/`date +%D`/${WANDB_NAME}" \
+--restore-file "/u1/y296guo/MultiModalDiscussionTransformer/mDT/experiments/hateful_discussions/contrastive-checkpoints/contrastive_checkpoint_best.pt" \
 --positive-weight 1.5 \
 --negative-weight 1 \
 --freeze_initial_encoders \
---split $6 
+--split $6 \
+--reset-optimizer \
+--batch-size-valid 16
