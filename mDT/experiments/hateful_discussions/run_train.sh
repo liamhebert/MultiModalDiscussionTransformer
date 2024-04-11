@@ -8,7 +8,7 @@
 #SBATCH --output=JOB-%j.log
 #SBATCH -e JOB-%j.err
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=l2hebert@uwaterloo.ca
+#SBATCH --mail-user=y296guo@uwaterloo.ca
 
 export SLURM_TMPDIR=$(pwd)
 export src=$(pwd)
@@ -19,7 +19,6 @@ export WANDB_PROJECT='Multi-Modal Discussion Transformer'
 
 cp big_indices/train_index-$6-images-big.txt $SLURM_TMPDIR/train-idx.txt
 cp big_indices/test_index-$6-images-big.txt $SLURM_TMPDIR/test-idx.txt
-cp duped-images-big.parquet $SLURM_TMPDIR/duped.parquet
 
 cd $SLURM_TMPDIR
 mkdir -p processed_graphs/processed
