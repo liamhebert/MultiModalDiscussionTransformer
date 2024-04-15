@@ -39,7 +39,7 @@ class TaskConfig(FairseqDataclass):
     )
 
     max_nodes: int = field(
-        default=1000000000000000,
+        default=10000,
         metadata={"help": "max nodes per graph"},
     )
 

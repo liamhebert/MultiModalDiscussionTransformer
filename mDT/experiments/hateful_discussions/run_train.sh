@@ -3,6 +3,7 @@
 #SBATCH --time=10:00:00
 #SBATCH --mem=48GB
 #SBATCH --partition=RCOHEN
+#SBATCH --account=rcohen_group
 #SBATCH --cpus-per-task=8
 #SBATCH --gpus=1
 #SBATCH --output=JOB-%j.log
@@ -35,7 +36,7 @@ fairseq-train \
     --num-classes 1 \
     --attention-dropout 0.3 --act-dropout 0.3 --dropout 0.4 \
     --optimizer adam --adam-betas '(0.9, 0.999)' --adam-eps 1e-8 --weight-decay 0.01 \
-    --lr-scheduler polynomial_decay --power 1 --warmup-updates 9732 --total-num-update 32440 \
+    --lr-scheduler polynomial_decay --power 1 --warmup-updates 3246 --total-num-update 10820 \
     --lr 3e-5 --end-learning-rate 3e-7 \
     --spatial-pos-max $3 \
     --validate-interval-updates 300 \
@@ -51,11 +52,14 @@ fairseq-train \
     --distributed-world-size 1 \
     --encoder-ffn-embed-dim 768 \
     --encoder-attention-heads 12 \
-    --max-epoch 10 \
+    --max-epoch 37 \
     --wandb-project "Multi-Modal Discussion Transformer" \
     --save-dir "./checkpoints-final/$(date +%D)/$(hostname)-${RANDOM}" \
+    --restore-file "/u1/y296guo/MultiModalDiscussionTransformer/mDT/experiments/hateful_discussions/contrastive-checkpoints/contrastive_checkpoint_best.pt" \
     --positive-weight 1.5 \
     --negative-weight 1 \
     --freeze_initial_encoders \
     --split $6 \
-    --max-nodes 10000
+    --reset-optimizer \
+    --max-nodes 10000 \
+    --update-freq 3
