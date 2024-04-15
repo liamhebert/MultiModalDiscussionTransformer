@@ -4,6 +4,7 @@ import contextlib
 from dataclasses import dataclass
 from omegaconf import open_dict, OmegaConf
 from fairseq.tasks import register_task
+import torch.nn as nn
 
 from ..data.dataset import NodeBatchedDataDataset, GraphormerPYGDataset
 
@@ -41,5 +42,12 @@ class NodePredictionTask(Task):
             cfg.max_nodes = self.cfg.max_nodes
 
         model = models.build_model(cfg, self)
+        model.node_encoder_stack = nn.ModuleList(
+            [
+                model.graph_encoder.text_pooler,
+                model.graph_encoder.text_dropout,
+                nn.Linear(768, 2),
+            ]
+        )
 
         return model
