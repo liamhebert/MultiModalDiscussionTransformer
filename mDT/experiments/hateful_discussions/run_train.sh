@@ -2,7 +2,7 @@
 # Launch SLURM parameters
 #SBATCH --time=10:00:00
 #SBATCH --mem=48GB
-#SBATCH --partition=RCOHEN
+#SBATCH --partition=ALL
 #SBATCH --account=rcohen_group
 #SBATCH --cpus-per-task=8
 #SBATCH --gpus=1
@@ -55,7 +55,7 @@ fairseq-train \
     --max-epoch 37 \
     --wandb-project "Multi-Modal Discussion Transformer" \
     --save-dir "./checkpoints-final/$(date +%D)/$(hostname)-${RANDOM}" \
-    --restore-file "/u1/y296guo/MultiModalDiscussionTransformer/mDT/experiments/hateful_discussions/contrastive-checkpoints/contrastive_checkpoint_best.pt" \
+    --restore-file "/u1/y296guo/MultiModalDiscussionTransformer/mDT/experiments/hateful_discussions/contrastive-checkpoints/checkpoint_last.pt" \
     --positive-weight 1.5 \
     --negative-weight 1 \
     --freeze_initial_encoders \
