@@ -44,8 +44,8 @@ class NodePredictionTask(Task):
         model = models.build_model(cfg, self)
         model.node_encoder_stack = nn.ModuleList(
             [
-                model.graph_encoder.text_pooler,
-                model.graph_encoder.text_dropout,
+                model.encoder.graph_encoder.text_pooler,
+                model.encoder.graph_encoder.text_dropout,
                 nn.Linear(768, 2),
             ]
         )
