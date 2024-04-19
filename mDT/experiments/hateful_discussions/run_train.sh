@@ -55,7 +55,7 @@ fairseq-train \
     --max-epoch 37 \
     --wandb-project "Multi-Modal Discussion Transformer" \
     --save-dir "./checkpoints-final/$(date +%D)/$(hostname)-${RANDOM}" \
-    --restore-file "/u1/y296guo/MultiModalDiscussionTransformer/mDT/experiments/hateful_discussions/contrastive-checkpoints/checkpoint_last.pt" \
+    --restore-file "/u1/y296guo/MultiModalDiscussionTransformer/mDT/experiments/hateful_discussions/contrastive-checkpoints/checkpoint_last_4_18.pt" \
     --positive-weight 1.5 \
     --negative-weight 1 \
     --freeze_initial_encoders \
