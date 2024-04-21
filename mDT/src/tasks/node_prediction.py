@@ -42,6 +42,8 @@ class NodePredictionTask(Task):
             cfg.max_nodes = self.cfg.max_nodes
 
         model = models.build_model(cfg, self)
+         # throw out node classifier trained in contrastive task for fresh starting point
+         # note that vs the normal hate speech task, the node classifier for the transfer learning is not copied from the bert checkpoint
         model.node_encoder_stack = nn.ModuleList(
             [
                 model.encoder.graph_encoder.text_pooler,
