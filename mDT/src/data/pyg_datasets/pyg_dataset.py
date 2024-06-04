@@ -93,7 +93,7 @@ class GraphormerPYGDataset(Dataset):
         dataset.test_idx = None
         return dataset
 
-    @lru_cache(maxsize=16)
+    @lru_cache(maxsize=32)
     def get(self, idx):
         if isinstance(idx, int):
             item = self.dataset[idx]
@@ -105,7 +105,7 @@ class GraphormerPYGDataset(Dataset):
                 "index to a GraphormerPYGDataset can only be an integer."
             )
 
-    @lru_cache(maxsize=16)
+    @lru_cache(maxsize=32)
     def __getitem__(self, idx):
         if isinstance(idx, int):
             item = self.dataset[idx]

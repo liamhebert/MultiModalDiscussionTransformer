@@ -2,6 +2,7 @@
 
 import torch
 from typing import List, Dict, Any
+import logging
 
 
 def pad_1d_unsqueeze(
@@ -103,6 +104,7 @@ def collator(items: List[List[torch.Tensor]], spatial_pos_max=10):
         - x_image_indexes: (torch.Tensor) batched image indexes
         - y: (torch.Tensor) batched target labels
     """
+    # logging.info("BATCH SIZE %s", len(items))
     (
         idxs,
         attn_biases,

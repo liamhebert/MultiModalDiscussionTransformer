@@ -43,6 +43,6 @@ class ContrastiveLearningTask(Task):
             cfg.max_nodes = self.cfg.max_nodes
 
         model = models.build_model(cfg, self)
-        model.node_encoder_stack = nn.ModuleList([nn.Identity()])
+        # model.node_encoder_stack = nn.ModuleList([nn.Identity()])
 
         return model

@@ -191,6 +191,7 @@ class NodeBatchedDataDataset(BatchedDataDataset):
         - y: (torch.Tensor) tensor of labels for each node in the graph.
             If a node does not have a label, it is padded with 0
         """
+
         samples = [sample for sample in samples if sample is not None]
         items = [
             (
